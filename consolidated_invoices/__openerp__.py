@@ -12,6 +12,7 @@
     'depends': ['sale', 'purchase', 'account_payment', 'account_accountant'],
     'init_xml': [],
     'update_xml': [
+        'security/ir.model.access.csv',
     ],
     'demo_xml': [],
     'test': [],

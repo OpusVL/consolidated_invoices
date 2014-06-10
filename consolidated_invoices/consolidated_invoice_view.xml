@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <record id="view_account_consolidated_invoice_filter" model="ir.ui.view">
+            <field name="name">account.consolidated.invoice.select</field>
+            <field name="model">account.consolidated.invoice</field>
+            <field name="arch" type="xml">
+                <search string="Search Consolidated Invoice">
+                    <filter name="draft" string="Draft" domain="[('state','=','draft')]" help="Draft Invoices"/>
+                    <filter name="invoices" string="Invoices" domain="[('state','not in',['draft','cancel'])]" help="Open/Paid Invoices"/>
+                    <filter name="unpaid" string="Unpaid" domain="[('state','=','open')]" help="Unpaid Invoices"/>
+                    <separator/>
+                    <group expand="0" string="Group By...">
+                        <filter string="Status" icon="terp-stock_effects-object-colorize" domain="[]"  context="{'group_by':'state'}"/>
+                        <filter string="Invoice Month" icon="terp-go-month" domain="[]"  context="{'group_by':'date_invoice'}"/>
+                    </group>
+               </search>
+            </field>
+        </record>
+
+        <record id="action_consolidated_invoice_tree" model="ir.actions.act_window">
+            <field name="name">Consolidated Invoices</field>
+            <field name="res_model">account.consolidated.invoice</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form,calendar,graph</field>
+            <field eval="False" name="view_id"/>
+            <field name="context">{}</field>
+            <field name="search_view_id" ref="view_account_consolidated_invoice_filter"/>
+            <field name="help" type="html">
+              <p class="oe_view_nocontent_create">
+                Click to create a consolidated invoice.
+              </p><p>
+                These will allow you to complete operations across a large number of invoices at once.
+              </p>
+            </field>
+        </record>
+
+        <record id="consolidated_invoice_form" model="ir.ui.view">
+            <field name="name">account.consolidated.invoice.form</field>
+            <field name="model">account.consolidated.invoice</field>
+            <field name="arch" type="xml">
+                <form string="Invoice" version="7.0">
+                <header>
+                    <button name="invoice_print" string="Print" type="object" attrs="{'invisible':[('state', '!=', 'open')]}" class="oe_highlight" groups="base.group_user"/>
+                    <button name="invoice_print" string="Print Invoice" type="object" attrs="{'invisible':[('state', '!=', 'open')]}" groups="base.group_user"/>
+                    <button name="invoice_open" states="draft" string="Validate" class="oe_highlight" groups="base.group_user"/>
+                    <button name="invoice_cancel" states="draft,open" string="Cancel Invoice" groups="base.group_no_one"/>
+                    <button name="action_cancel_draft" states="cancel" string="Reset to Draft" type="object" groups="base.group_user"/>
+                    <field name="state" widget="statusbar" nolabel="1" statusbar_visible="draft,open,paid" />
+                </header>
+                <sheet string="Invoice">
+                    <h1>
+                        <label string="Draft Invoice " attrs="{'invisible': ['|',('state','not in',('draft',)), ('type','&lt;&gt;','out_invoice')]}"/>
+                        <label string="Draft Refund " attrs="{'invisible': ['|',('state','not in',('draft',)), ('type','&lt;&gt;','out_refund')]}"/>
+                        <label string="Invoice " attrs="{'invisible': ['|',('state','in',('draft','proforma','proforma2')), ('type','&lt;&gt;','out_invoice')]}"/>
+                        <label string="Refund " attrs="{'invisible': ['|',('state','in',('draft','proforma','proforma2')), ('type','&lt;&gt;','out_refund')]}"/>
+                    </h1>
+                    <group>
+                        <group>
+                            <field name="date_invoice"/>
+                        </group>
+                    </group>
+                    <notebook colspan="4">
+                        <page string="Invoice Lines">
+                            <div class="oe_clear">
+                                <label for="comment"/>
+                            </div>
+                            <field name="comment" class="oe_inline" placeholder="Additional notes..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_consolidated_invoice_tree_view1" model="ir.actions.act_window.view">
+            <field eval="1" name="sequence"/>
+            <field name="view_mode">tree</field>
+            <field name="act_window_id" ref="action_consolidated_invoice_tree"/>
+        </record>
+
+        <record id="action_consolidated_invoice_tree_view2" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="consolidated_invoice_form"/>
+            <field name="act_window_id" ref="action_consolidated_invoice_tree"/>
+        </record>
+
+        <menuitem action="action_consolidated_invoice_tree" id="menu_action_consolidated_invoice_tree" parent="account.menu_finance_receivables"/>
+
+    </data>
+</openerp>

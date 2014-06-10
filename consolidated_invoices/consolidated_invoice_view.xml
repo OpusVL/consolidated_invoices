@@ -50,13 +50,12 @@
                 </header>
                 <sheet string="Invoice">
                     <h1>
-                        <label string="Draft Invoice " attrs="{'invisible': ['|',('state','not in',('draft',)), ('type','&lt;&gt;','out_invoice')]}"/>
-                        <label string="Draft Refund " attrs="{'invisible': ['|',('state','not in',('draft',)), ('type','&lt;&gt;','out_refund')]}"/>
-                        <label string="Invoice " attrs="{'invisible': ['|',('state','in',('draft','proforma','proforma2')), ('type','&lt;&gt;','out_invoice')]}"/>
-                        <label string="Refund " attrs="{'invisible': ['|',('state','in',('draft','proforma','proforma2')), ('type','&lt;&gt;','out_refund')]}"/>
+                        <label string="Draft Consolidated Invoice " attrs="{'invisible': [('state','not in',('draft',))]}"/>
+                        <label string="Consolidated Invoice " attrs="{'invisible': [('state','in',('draft','proforma','proforma2'))]}"/>
                     </h1>
                     <group>
                         <group>
+                            <field name="reference"/>
                             <field name="date_invoice"/>
                         </group>
                     </group>

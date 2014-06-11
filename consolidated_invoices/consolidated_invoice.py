@@ -36,7 +36,7 @@ class consolidated_invoice_link(osv.osv):
     _description = 'Consolidated invoice'
     _columns = {
         'consolidated_invoice_id': fields.many2one('account.consolidated.invoice', 'Consolidated Invoice Reference', select=True),
-        'invoice_id': fields.many2one('account.invoice', 'Invoice', select=True),
+        'invoice_id': fields.many2one('account.invoice', 'Invoice', select=True, required=True),
     }
 
 

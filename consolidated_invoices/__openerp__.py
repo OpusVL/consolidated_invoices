@@ -13,7 +13,8 @@
     'init_xml': [],
     'update_xml': [
         'security/ir.model.access.csv',
-        'consolidated_invoice_view.xml'
+        'consolidated_invoice_view.xml',
+        'consolidated_invoice_workflow.xml'
     ],
     'demo_xml': [],
     'test': [],

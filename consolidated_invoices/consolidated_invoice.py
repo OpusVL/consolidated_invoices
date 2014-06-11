@@ -31,6 +31,14 @@ class consolidated_invoice(osv.osv):
         'company_id': lambda self,cr,uid,c: self.pool.get('res.company')._company_default_get(cr, uid, 'account.invoice', context=c),
     }
 
+    # go from canceled state to draft state
+    def action_cancel_draft(self, cr, uid, ids, *args):
+        self.write(cr, uid, ids, {'state':'draft'})
+        self.delete_workflow(cr, uid, ids)
+        self.create_workflow(cr, uid, ids)
+        return True
+
+
 class consolidated_invoice_link(osv.osv):
     _name = 'account.consolidated.invoice.link'
     _description = 'Consolidated invoice'

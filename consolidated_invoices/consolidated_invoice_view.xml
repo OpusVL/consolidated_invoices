@@ -61,6 +61,11 @@
                     </group>
                     <notebook colspan="4">
                         <page string="Invoice Lines">
+                            <field name="invoice_links" nolabel="1" widget="one2many_list" context="{}">
+                                <tree string="Invoices" editable="bottom">
+                                    <field name="invoice_id"/>
+                                </tree>
+                            </field>
                             <div class="oe_clear">
                                 <label for="comment"/>
                             </div>

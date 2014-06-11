@@ -11,7 +11,7 @@ class consolidated_invoice(osv.osv):
     _columns = {
         'name': fields.char('Reference', size=64, select=True, readonly=True, states={'draft': [('readonly',False)]}),
         'reference': fields.char('Invoice Reference', size=64, help="The partner reference of this invoice."),
-        'invoice_ids': fields.one2many('account.invoice', 'consolidated_invoice_id', 'Invoices', readonly=True, states={'draft':[('readonly',False)]}),
+        'invoice_links': fields.one2many('account.consolidated.invoice.link', 'consolidated_invoice_id', 'Invoices', readonly=True, states={'draft':[('readonly',False)]}),
         'comment': fields.text('Additional Information'),
         'state': fields.selection([
             ('draft','Draft'),
@@ -31,11 +31,19 @@ class consolidated_invoice(osv.osv):
         'company_id': lambda self,cr,uid,c: self.pool.get('res.company')._company_default_get(cr, uid, 'account.invoice', context=c),
     }
 
+class consolidated_invoice_link(osv.osv):
+    _name = 'account.consolidated.invoice.link'
+    _description = 'Consolidated invoice'
+    _columns = {
+        'consolidated_invoice_id': fields.many2one('account.consolidated.invoice', 'Consolidated Invoice Reference', select=True),
+        'invoice_id': fields.many2one('account.invoice', 'Invoice', select=True),
+    }
+
 
 class account_invoice(osv.osv):
 
     _inherit = "account.invoice"
 
     _columns = {
-        'consolidated_invoice_id': fields.many2one('account.consolidated.invoice', 'Consolidated Invoice Reference', select=True),
+        'consolidated_invoice_link': fields.one2many('account.consolidated.invoice.link', 'invoice_id', 'Consolidated Invoice')
     }

@@ -38,6 +38,31 @@ class consolidated_invoice(osv.osv):
         self.create_workflow(cr, uid, ids)
         return True
 
+    def action_date_assign(self, cr, uid, ids, *args):
+        # FIXME: implement this.
+        return True
+
+    def invoice_validate(self, cr, uid, ids, context=None):
+        self.write(cr, uid, ids, {'state':'open'}, context=context)
+        return True
+
+    def confirm_paid(self, cr, uid, ids, context=None):
+        if context is None:
+            context = {}
+        self.write(cr, uid, ids, {'state':'paid'}, context=context)
+        return True
+
+    def action_cancel(self, cr, uid, ids, context=None):
+        # FIXME: implement this.
+        return True
+
+    def move_line_id_payment_get(self, cr, uid, ids, *args):
+        # FIXME: implement this.
+        return []
+
+    def test_paid(self, cr, uid, ids, *args):
+        # FIXME: implement this.
+        return False
 
 class consolidated_invoice_link(osv.osv):
     _name = 'account.consolidated.invoice.link'

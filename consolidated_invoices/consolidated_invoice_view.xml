@@ -67,6 +67,8 @@
                                         domain="[('consolidated_invoice_link','=',False)]" />
                                 </tree>
                             </field>
+                            <group class="oe_subtotal_footer oe_right">
+                            </group>
                             <div class="oe_clear">
                                 <label for="comment"/>
                             </div>

@@ -1,11 +1,53 @@
 # -*- coding: utf-8 -*-
 from openerp.osv import fields, osv, orm
+import openerp.addons.decimal_precision as dp
 
 
 class consolidated_invoice(osv.osv):
 
+    def _get_invoices(self, cr, uid, ids, context=None):
+        # this function is passed a list of invoices that have changed.  
+        # this function then returns the list of consolidated invoices they are
+        # on so that they can be recalculated.
+        result = {}
+        for invoice in self.pool.get('account.invoice').browse(cr, uid, ids, context=context):
+            if invoice.consolidated_invoice_link:
+                result[invoice.consolidated_invoice_link.invoice_id.id] = True
+        return result.keys()
+
+    def _get_invoice_line(self, cr, uid, ids, context=None):
+        result = {}
+        for line in self.pool.get('account.invoice.line').browse(cr, uid, ids, context=context):
+            ci_link = line.invoice_id.consolidated_invoice_link
+            if ci_link:
+                result[ci_link.invoice_id.id] = True
+        return result.keys()
+
+    def _get_invoice_tax(self, cr, uid, ids, context=None):
+        result = {}
+        for tax in self.pool.get('account.invoice.tax').browse(cr, uid, ids, context=context):
+            ci_link = tax.invoice_id.consolidated_invoice_link
+            if ci_link:
+                result[ci_link.invoice_id.id] = True
+        return result.keys()
+
+    def _amount_all(self, cr, uid, ids, name, args, context=None):
+        res = {}
+        for ci in self.browse(cr, uid, ids, context=context):
+            res[ci.id] = {
+                'amount_untaxed': 0.0,
+                'amount_tax': 0.0,
+                'amount_total': 0.0
+            }
+            for invoice in ci.invoice_links.invoice_id:
+                for line in invoice.invoice_line:
+                    res[ci.id]['amount_untaxed'] += line.price_subtotal
+                for line in invoice.tax_line:
+                    res[ci.id]['amount_tax'] += line.amount
+                res[ci.id]['amount_total'] = res[ci.id]['amount_tax'] + res[ci.id]['amount_untaxed']
+        return res
+
     _name = 'account.consolidated.invoice'
-    #_inherit = []
     _description = 'Consolidated invoice'
     _order = "id desc"
     _columns = {
@@ -25,6 +67,28 @@ class consolidated_invoice(osv.osv):
             \n* The \'Cancelled\' status is used when user cancel invoice.'),
         'date_invoice': fields.date('Invoice Date', readonly=True, states={'draft':[('readonly',False)]}, select=True, help="Keep empty to use the current date"),
         'company_id': fields.many2one('res.company', 'Company', required=True, change_default=True, readonly=True, states={'draft':[('readonly',False)]}),
+
+        'amount_untaxed': fields.function(_amount_all, digits_compute=dp.get_precision('Account'), string='Subtotal', track_visibility='always',
+            store={
+                'account.invoice': (_get_invoices, ['invoice_line'], 20),
+                'account.invoice.tax': (_get_invoice_tax, None, 20),
+                'account.invoice.line': (_get_invoice_line, ['price_unit','invoice_line_tax_id','quantity','discount','invoice_id'], 20),
+            },
+            multi='all'),
+        'amount_tax': fields.function(_amount_all, digits_compute=dp.get_precision('Account'), string='Tax',
+            store={
+                'account.invoice': (_get_invoices, ['invoice_line'], 20),
+                'account.invoice.tax': (_get_invoice_tax, None, 20),
+                'account.invoice.line': (_get_invoice_line, ['price_unit','invoice_line_tax_id','quantity','discount','invoice_id'], 20),
+            },
+            multi='all'),
+        'amount_total': fields.function(_amount_all, digits_compute=dp.get_precision('Account'), string='Total',
+            store={
+                'account.invoice': (_get_invoices, ['invoice_line'], 20),
+                'account.invoice.tax': (_get_invoice_tax, None, 20),
+                'account.invoice.line': (_get_invoice_line, ['price_unit','invoice_line_tax_id','quantity','discount','invoice_id'], 20),
+            },
+            multi='all'),
     }
     _defaults = {
         'state': 'draft',
@@ -63,6 +127,7 @@ class consolidated_invoice(osv.osv):
     def test_paid(self, cr, uid, ids, *args):
         # FIXME: implement this.
         return False
+
 
 class consolidated_invoice_link(osv.osv):
     _name = 'account.consolidated.invoice.link'

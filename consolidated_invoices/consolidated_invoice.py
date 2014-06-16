@@ -12,7 +12,8 @@ class consolidated_invoice(osv.osv):
         result = {}
         for invoice in self.pool.get('account.invoice').browse(cr, uid, ids, context=context):
             if invoice.consolidated_invoice_link:
-                result[invoice.consolidated_invoice_link.invoice_id.id] = True
+                for inv_id in [ i.consolidated_invoice_id.id for i in invoice.consolidated_invoice_link ]:
+                    result[inv_id] = True
         return result.keys()
 
     def _get_invoice_line(self, cr, uid, ids, context=None):
@@ -20,7 +21,7 @@ class consolidated_invoice(osv.osv):
         for line in self.pool.get('account.invoice.line').browse(cr, uid, ids, context=context):
             ci_link = line.invoice_id.consolidated_invoice_link
             if ci_link:
-                result[ci_link.invoice_id.id] = True
+                result[ci_link[0].consolidated_invoice_id.id] = True
         return result.keys()
 
     def _get_invoice_tax(self, cr, uid, ids, context=None):
@@ -28,7 +29,7 @@ class consolidated_invoice(osv.osv):
         for tax in self.pool.get('account.invoice.tax').browse(cr, uid, ids, context=context):
             ci_link = tax.invoice_id.consolidated_invoice_link
             if ci_link:
-                result[ci_link.invoice_id.id] = True
+                result[ci_link[0].consolidated_invoice_id.id] = True
         return result.keys()
 
     def _amount_all(self, cr, uid, ids, name, args, context=None):
@@ -39,7 +40,7 @@ class consolidated_invoice(osv.osv):
                 'amount_tax': 0.0,
                 'amount_total': 0.0
             }
-            for invoice in ci.invoice_links.invoice_id:
+            for invoice in [l.invoice_id for l in ci.invoice_links]:
                 for line in invoice.invoice_line:
                     res[ci.id]['amount_untaxed'] += line.price_subtotal
                 for line in invoice.tax_line:

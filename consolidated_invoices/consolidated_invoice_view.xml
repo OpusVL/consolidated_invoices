@@ -18,7 +18,23 @@
             </field>
         </record>
 
-        <record id="action_consolidated_invoice_tree" model="ir.actions.act_window">
+        <record id="consolidated_invoice_tree" model="ir.ui.view">
+            <field name="name">account.consolidated.invoice.tree</field>
+            <field name="model">account.consolidated.invoice</field>
+            <field name="arch" type="xml">
+                <tree colors="blue:state == 'draft';black:state in ('open');gray:state == 'cancel'" string="Invoice">
+                    <field name="date_invoice"/>
+                    <field name="reference" invisible="1"/>
+                    <field name="name" invisible="1"/>
+                    <field name="company_id" groups="base.group_multi_company" widget="selection"/>
+                    <field name="amount_untaxed" sum="Untaxed Amount"/>
+                    <field name="amount_total" sum="Total Amount"/>
+                    <field name="state"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_consolidated_invoice_tree1" model="ir.actions.act_window">
             <field name="name">Consolidated Invoices</field>
             <field name="res_model">account.consolidated.invoice</field>
             <field name="view_type">form</field>
@@ -60,7 +76,7 @@
                         </group>
                     </group>
                     <notebook colspan="4">
-                        <page string="Invoice Lines">
+                        <page string="Invoices">
                             <field name="invoice_links" nolabel="1" widget="one2many_list" context="{}">
                                 <tree string="Invoices" editable="bottom">
                                     <field name="invoice_id" 
@@ -68,6 +84,8 @@
                                 </tree>
                             </field>
                             <group class="oe_subtotal_footer oe_right">
+                                <field name="amount_tax" widget="monetary" />
+                                <field name="amount_total" class="oe_subtotal_footer_separator" widget="monetary" />
                             </group>
                             <div class="oe_clear">
                                 <label for="comment"/>
@@ -93,7 +111,17 @@
             <field name="act_window_id" ref="action_consolidated_invoice_tree"/>
         </record>
 
-        <menuitem action="action_consolidated_invoice_tree" id="menu_action_consolidated_invoice_tree" parent="account.menu_finance_receivables"/>
+        <record id="action_consolidated_invoice_tree" model="ir.actions.act_window">
+            <field name="name">Consolidated Invoices</field>
+            <field name="res_model">account.consolidated.invoice</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form,calendar,graph</field>
+            <field name="view_id" ref="consolidated_invoice_tree"/>
+            <field name="context">{'type':'out_invoice'}</field>
+            <field name="search_view_id" ref="view_account_consolidated_invoice_filter"/>
+        </record>
+
+        <menuitem action="action_consolidated_invoice_tree1" id="menu_action_consolidated_invoice_tree" parent="account.menu_finance_receivables"/>
 
     </data>
 </openerp>

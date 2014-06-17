@@ -109,7 +109,7 @@
                             <field name="invoice_links" nolabel="1" widget="one2many_list" context="{}">
                                 <tree string="Invoices" editable="bottom">
                                     <field name="invoice_id" 
-                                        domain="['|',('consolidated_invoice_link','=',False),('partner_id','child_of',self.partner_id)]" />
+                                        domain="[('consolidated_invoice_link','=',False),('partner_id','child_of',parent.partner_id)]" />
                                     <field name="amount_total" />
                                 </tree>
                             </field>

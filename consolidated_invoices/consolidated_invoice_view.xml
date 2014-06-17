@@ -81,6 +81,7 @@
                                 <tree string="Invoices" editable="bottom">
                                     <field name="invoice_id" 
                                         domain="[('consolidated_invoice_link','=',False)]" />
+                                    <field name="amount_total" />
                                 </tree>
                             </field>
                             <group class="oe_subtotal_footer oe_right">

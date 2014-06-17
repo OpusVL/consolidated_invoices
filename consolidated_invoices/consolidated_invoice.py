@@ -134,11 +134,64 @@ class consolidated_invoice(osv.osv):
 
 
 class consolidated_invoice_link(osv.osv):
+
+    def _amount_all(self, cr, uid, ids, name, args, context=None):
+        res = {}
+        for ci in self.browse(cr, uid, ids, context=context):
+            res[ci.id] = {
+                'amount_untaxed': 0.0,
+                'amount_tax': 0.0,
+                'amount_total': 0.0
+            }
+            invoice = ci.invoice_id
+            for line in invoice.invoice_line:
+                res[ci.id]['amount_untaxed'] += line.price_subtotal
+            for line in invoice.tax_line:
+                res[ci.id]['amount_tax'] += line.amount
+            res[ci.id]['amount_total'] = res[ci.id]['amount_tax'] + res[ci.id]['amount_untaxed']
+        return res
+
+    def _get_invoices(self, cr, uid, ids, context=None):
+        # this function is passed a list of invoices that have changed.  
+        # this function then returns the list of consolidated invoices they are
+        # on so that they can be recalculated.
+        result = {}
+        for invoice in self.pool.get('account.invoice').browse(cr, uid, ids, context=context):
+            if invoice.consolidated_invoice_link:
+                for inv_id in [ i.id for i in invoice.consolidated_invoice_link ]:
+                    result[inv_id] = True
+        return result.keys()
+
+    def _get_invoice_line(self, cr, uid, ids, context=None):
+        result = {}
+        for line in self.pool.get('account.invoice.line').browse(cr, uid, ids, context=context):
+            ci_link = line.invoice_id.consolidated_invoice_link
+            if ci_link:
+                result[ci_link[0].id] = True
+        return result.keys()
+
+    def _get_invoice_tax(self, cr, uid, ids, context=None):
+        result = {}
+        for tax in self.pool.get('account.invoice.tax').browse(cr, uid, ids, context=context):
+            ci_link = tax.invoice_id.consolidated_invoice_link
+            if ci_link:
+                result[ci_link[0].id] = True
+        return result.keys()
+
+
     _name = 'account.consolidated.invoice.link'
     _description = 'Consolidated invoice'
     _columns = {
         'consolidated_invoice_id': fields.many2one('account.consolidated.invoice', 'Consolidated Invoice Reference', ondelete='cascade', select=True),
         'invoice_id': fields.many2one('account.invoice', 'Invoice', ondelete='cascade', select=True, required=True),
+        'amount_total': fields.function(_amount_all, digits_compute=dp.get_precision('Account'), string='Invoice Total',
+            store={
+                'account.consolidated.invoice.link': (lambda self, cr, uid, ids, c={}: ids, ['invoice_id'], 20),
+                'account.invoice': (_get_invoices, ['invoice_line'], 20),
+                'account.invoice.tax': (_get_invoice_tax, None, 20),
+                'account.invoice.line': (_get_invoice_line, ['price_unit','invoice_line_tax_id','quantity','discount','invoice_id'], 20),
+            },
+            multi='all'),
     }
 
 

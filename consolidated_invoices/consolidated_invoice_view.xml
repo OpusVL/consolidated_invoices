@@ -119,8 +119,8 @@
                                 </tree>
                             </field>
                             <group class="oe_subtotal_footer oe_right">
-                                <field name="amount_tax" widget="monetary" />
-                                <field name="amount_total" class="oe_subtotal_footer_separator" widget="monetary" />
+                                <field name="amount_tax" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                <field name="amount_total" class="oe_subtotal_footer_separator" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                             </group>
                             <div class="oe_clear">
                                 <label for="comment"/>

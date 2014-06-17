@@ -1,6 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
     <data>
+        <record id="view_consolidated_invoice_line_calendar" model="ir.ui.view">
+            <field name="name">account.consolidated.invoice.calendar</field>
+            <field name="model">account.consolidated.invoice</field>
+            <field name="arch" type="xml">
+                <calendar string="Consolidated Invoices" date_start="date_invoice">
+                    <field name="partner_id"/>
+                    <field name="amount_total"/>
+                </calendar>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="view_consolidated_invoice_graph">
+            <field name="name">account.consolidated.invoice.graph</field>
+            <field name="model">account.consolidated.invoice</field>
+            <field name="arch" type="xml">
+                <graph string="Consolidated Invoices" type="bar">
+                    <field name="partner_id"/>
+                    <field name="amount_total" operator="+"/>
+                </graph>
+            </field>
+        </record>
+
         <record id="view_account_consolidated_invoice_filter" model="ir.ui.view">
             <field name="name">account.consolidated.invoice.select</field>
             <field name="model">account.consolidated.invoice</field>
@@ -25,7 +47,9 @@
                 <tree colors="blue:state == 'draft';black:state in ('open');gray:state == 'cancel'" string="Invoice">
                     <field name="date_invoice"/>
                     <field name="reference" invisible="1"/>
-                    <field name="name" invisible="1"/>
+                    <field name="partner_id" groups="base.group_user"/>
+                    <field name="name"/>
+                    <field name="line_text"/>
                     <field name="company_id" groups="base.group_multi_company" widget="selection"/>
                     <field name="amount_untaxed" sum="Untaxed Amount"/>
                     <field name="amount_total" sum="Total Amount"/>
@@ -72,7 +96,12 @@
                     <group>
                         <group>
                             <field name="reference"/>
+                            <field name="line_text"/>
                             <field name="date_invoice"/>
+                            <field string="Customer" name="partner_id"
+                                context="{'search_default_customer':1, 'show_address': 1}"
+                                options='{"always_reload": True}'
+                                domain="[('customer', '=', True)]"/>
                         </group>
                     </group>
                     <notebook colspan="4">
@@ -80,7 +109,7 @@
                             <field name="invoice_links" nolabel="1" widget="one2many_list" context="{}">
                                 <tree string="Invoices" editable="bottom">
                                     <field name="invoice_id" 
-                                        domain="[('consolidated_invoice_link','=',False)]" />
+                                        domain="['|',('consolidated_invoice_link','=',False),('partner_id','child_of',self.partner_id)]" />
                                     <field name="amount_total" />
                                 </tree>
                             </field>

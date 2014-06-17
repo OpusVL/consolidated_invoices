@@ -53,6 +53,7 @@ class consolidated_invoice(osv.osv):
     _order = "id desc"
     _columns = {
         'name': fields.char('Reference', size=64, select=True, readonly=True, states={'draft': [('readonly',False)]}),
+        'line_text': fields.text('Line Text', required=True),
         'reference': fields.char('Invoice Reference', size=64, help="The partner reference of this invoice."),
         'invoice_links': fields.one2many('account.consolidated.invoice.link', 'consolidated_invoice_id', 'Invoices', readonly=True, states={'draft':[('readonly',False)]}),
         'comment': fields.text('Additional Information'),
@@ -67,6 +68,7 @@ class consolidated_invoice(osv.osv):
             \n* The \'Paid\' status is set automatically when the invoice is paid. Its related journal entries may or may not be reconciled. \
             \n* The \'Cancelled\' status is used when user cancel invoice.'),
         'date_invoice': fields.date('Invoice Date', readonly=True, states={'draft':[('readonly',False)]}, select=True, help="Keep empty to use the current date"),
+        'partner_id': fields.many2one('res.partner', 'Partner', change_default=True, readonly=True, required=True, states={'draft':[('readonly',False)]}, track_visibility='always'),
         'company_id': fields.many2one('res.company', 'Company', required=True, change_default=True, readonly=True, states={'draft':[('readonly',False)]}),
 
         'amount_untaxed': fields.function(_amount_all, digits_compute=dp.get_precision('Account'), string='Subtotal', track_visibility='always',

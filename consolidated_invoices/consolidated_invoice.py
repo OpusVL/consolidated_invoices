@@ -32,6 +32,30 @@ class consolidated_invoice(osv.osv):
                 result[ci_link[0].consolidated_invoice_id.id] = True
         return result.keys()
 
+    def _get_journal(self, cr, uid, context=None):
+        if context is None:
+            context = {}
+        type_inv = context.get('type', 'out_invoice')
+        user = self.pool.get('res.users').browse(cr, uid, uid, context=context)
+        company_id = context.get('company_id', user.company_id.id)
+        type2journal = {'out_invoice': 'sale', 'in_invoice': 'purchase', 'out_refund': 'sale_refund', 'in_refund': 'purchase_refund'}
+        journal_obj = self.pool.get('account.journal')
+        domain = [('company_id', '=', company_id)]
+        if isinstance(type_inv, list):
+            domain.append(('type', 'in', [type2journal.get(type) for type in type_inv if type2journal.get(type)]))
+        else:
+            domain.append(('type', '=', type2journal.get(type_inv, 'sale')))
+        res = journal_obj.search(cr, uid, domain, limit=1)
+        return res and res[0] or False
+
+    def _get_currency(self, cr, uid, context=None):
+        res = False
+        journal_id = self._get_journal(cr, uid, context=context)
+        if journal_id:
+            journal = self.pool.get('account.journal').browse(cr, uid, journal_id, context=context)
+            res = journal.currency and journal.currency.id or journal.company_id.currency_id.id
+        return res
+
     def _amount_all(self, cr, uid, ids, name, args, context=None):
         res = {}
         for ci in self.browse(cr, uid, ids, context=context):
@@ -70,6 +94,8 @@ class consolidated_invoice(osv.osv):
         'date_invoice': fields.date('Invoice Date', readonly=True, states={'draft':[('readonly',False)]}, select=True, help="Keep empty to use the current date"),
         'partner_id': fields.many2one('res.partner', 'Partner', change_default=True, readonly=True, required=True, states={'draft':[('readonly',False)]}, track_visibility='always'),
         'company_id': fields.many2one('res.company', 'Company', required=True, change_default=True, readonly=True, states={'draft':[('readonly',False)]}),
+        'currency_id': fields.many2one('res.currency', 'Currency', required=True, readonly=True, states={'draft':[('readonly',False)]}, track_visibility='always'),
+        'journal_id': fields.many2one('account.journal', 'Journal', required=True, readonly=True, states={'draft':[('readonly',False)]}),
 
         'amount_untaxed': fields.function(_amount_all, digits_compute=dp.get_precision('Account'), string='Subtotal', track_visibility='always',
             store={
@@ -98,6 +124,8 @@ class consolidated_invoice(osv.osv):
     }
     _defaults = {
         'state': 'draft',
+        'journal_id': _get_journal,
+        'currency_id': _get_currency,
         'company_id': lambda self,cr,uid,c: self.pool.get('res.company')._company_default_get(cr, uid, 'account.invoice', context=c),
     }
 

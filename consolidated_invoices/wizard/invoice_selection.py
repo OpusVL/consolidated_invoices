@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-#    OpenERP, Open Source Management Solution
 #    Copyright (c) 2014 OpusVL. All Rights Reserved.
 #
 #    This program is free software: you can redistribute it and/or modify

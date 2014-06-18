@@ -11,7 +11,7 @@
     'website': 'http://www.opusvl.com',
     'depends': ['sale', 'purchase', 'account_payment', 'account_accountant'],
     'init_xml': [],
-    'update_xml': [
+    'data': [
         'security/ir.model.access.csv',
         'consolidated_invoice_view.xml',
         'consolidated_invoice_workflow.xml',

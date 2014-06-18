@@ -26,6 +26,10 @@ class invoice_merge(orm.TransientModel):
     _name = "consolidated.invoice.selection"
     _description = "Consolidated Invoice Selection"
 
+    def _validate_criteria(self, cr, uid, context):
+        if context.get('active_model', '') == 'account.invoice':
+            ids = context['active_ids']
+
     def fields_view_get(self, cr, uid, view_id=None, view_type='form',
                         context=None, toolbar=False, submenu=False):
         if context is None:

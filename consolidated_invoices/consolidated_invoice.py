@@ -142,6 +142,9 @@ class consolidated_invoice(osv.osv):
 
     def invoice_validate(self, cr, uid, ids, context=None):
         self.write(cr, uid, ids, {'state':'open'}, context=context)
+        account_inv_obj = self.pool.get('account.invoice')
+        inv_ids = account_inv_obj.search(cr, uid, [('state','=','draft'), ('consolidated_invoice_link.consolidated_invoice_id', 'in', ids)], context=context)
+        account_inv_obj.invoice_validate(cr, uid, inv_ids, context=context)
         return True
 
     def confirm_paid(self, cr, uid, ids, context=None):
@@ -162,6 +165,18 @@ class consolidated_invoice(osv.osv):
         # FIXME: implement this.
         return False
 
+    def onchange_journal_id(self, cr, uid, ids, journal_id=False, context=None):
+        result = {}
+        if journal_id:
+            journal = self.pool.get('account.journal').browse(cr, uid, journal_id, context=context)
+            currency_id = journal.currency and journal.currency.id or journal.company_id.currency_id.id
+            company_id = journal.company_id.id
+            result = {'value': {
+                    'currency_id': currency_id,
+                    'company_id': company_id,
+                    }
+                }
+        return result
 
 class consolidated_invoice_link(osv.osv):
 

@@ -5,7 +5,7 @@
             <field name="name">account.consolidated.invoice.calendar</field>
             <field name="model">account.consolidated.invoice</field>
             <field name="arch" type="xml">
-                <calendar string="Consolidated Invoices" date_start="date_invoice">
+                <calendar string="Consolidated Invoices" color="journal_id" date_start="date_invoice">
                     <field name="partner_id"/>
                     <field name="amount_total"/>
                 </calendar>
@@ -114,7 +114,7 @@
                             <field name="invoice_links" nolabel="1" widget="one2many_list" context="{}">
                                 <tree string="Invoices" editable="bottom">
                                     <field name="invoice_id" 
-                                        domain="[('consolidated_invoice_link','=',False),('partner_id','child_of',parent.partner_id)]" />
+                                        domain="[('consolidated_invoice_link','=',False),('partner_id','child_of',parent.partner_id),('state','=','draft')]" />
                                     <field name="amount_total" />
                                 </tree>
                             </field>

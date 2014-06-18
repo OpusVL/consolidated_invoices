@@ -194,6 +194,13 @@ class consolidated_invoice(osv.osv):
                 }
         return result
 
+    def invoice_print(self, cr, uid, ids, context=None):
+        """This function prints the invoice.
+        """
+        assert len(ids) == 1, 'This option should only be used for a single id at a time.'
+        self.write(cr, uid, ids, {'sent': True}, context=context)
+        return self.pool['report'].get_action(cr, uid, ids, 'account.report_consolidated_invoice', context=context)
+
 class consolidated_invoice_link(osv.osv):
 
     def _amount_all(self, cr, uid, ids, name, args, context=None):

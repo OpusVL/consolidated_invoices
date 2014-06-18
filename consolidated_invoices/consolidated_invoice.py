@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from openerp.osv import fields, osv, orm
 import openerp.addons.decimal_precision as dp
+import re
 
 
 class consolidated_invoice(osv.osv):
@@ -65,10 +66,17 @@ class consolidated_invoice(osv.osv):
                 'amount_total': 0.0
             }
             for invoice in [l.invoice_id for l in ci.invoice_links]:
+                refund = re.match('.*refund$', invoice.type)
                 for line in invoice.invoice_line:
-                    res[ci.id]['amount_untaxed'] += line.price_subtotal
+                    if refund:
+                        res[ci.id]['amount_untaxed'] -= line.price_subtotal
+                    else:
+                        res[ci.id]['amount_untaxed'] += line.price_subtotal
                 for line in invoice.tax_line:
-                    res[ci.id]['amount_tax'] += line.amount
+                    if refund:
+                        res[ci.id]['amount_tax'] -= line.amount
+                    else:
+                        res[ci.id]['amount_tax'] += line.amount
                 res[ci.id]['amount_total'] = res[ci.id]['amount_tax'] + res[ci.id]['amount_untaxed']
         return res
 
@@ -197,10 +205,17 @@ class consolidated_invoice_link(osv.osv):
                 'amount_total': 0.0
             }
             invoice = ci.invoice_id
+            refund = re.match('.*refund$', invoice.type)
             for line in invoice.invoice_line:
-                res[ci.id]['amount_untaxed'] += line.price_subtotal
+                if refund:
+                    res[ci.id]['amount_untaxed'] -= line.price_subtotal
+                else:
+                    res[ci.id]['amount_untaxed'] += line.price_subtotal
             for line in invoice.tax_line:
-                res[ci.id]['amount_tax'] += line.amount
+                if refund:
+                    res[ci.id]['amount_tax'] -= line.amount
+                else:
+                    res[ci.id]['amount_tax'] += line.amount
             res[ci.id]['amount_total'] = res[ci.id]['amount_tax'] + res[ci.id]['amount_untaxed']
         return res
 

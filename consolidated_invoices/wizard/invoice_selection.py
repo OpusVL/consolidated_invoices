@@ -29,6 +29,22 @@ class invoice_merge(orm.TransientModel):
     def _validate_criteria(self, cr, uid, context):
         if context.get('active_model', '') == 'account.invoice':
             ids = context['active_ids']
+            inv_obj = self.pool.get('account.invoice')
+            invs = inv_obj.read(cr, uid, ids, ['account_id', 'state', 'type', 'company_id',
+                                               'partner_id', 'currency_id', 'journal_id'])
+            # FIXME: ensure the invoices aren't on an existing consolidated invoice.
+            for d in invs:
+                if d['state'] != 'draft':
+                    raise orm.except_orm(_('Warning'), _('At least one of the selected invoices is %s!') % d['state'])
+                if (d['company_id'] != invs[0]['company_id']):
+                    raise orm.except_orm(_('Warning'), _('Not all invoices are at the same company!'))
+                if (d['partner_id'] != invs[0]['partner_id']):
+                    raise orm.except_orm(_('Warning'), _('Not all invoices are for the same partner!'))
+                if (d['currency_id'] != invs[0]['currency_id']):
+                    raise orm.except_orm(_('Warning'), _('Not all invoices are at the same currency!'))
+                if (d['journal_id'] != invs[0]['journal_id']):
+                    raise orm.except_orm(_('Warning'), _('Not all invoices are at the same journal!'))
+        return
 
     def fields_view_get(self, cr, uid, view_id=None, view_type='form',
                         context=None, toolbar=False, submenu=False):
@@ -36,6 +52,7 @@ class invoice_merge(orm.TransientModel):
             context = {}
         # FIXME: implement validation of the invoices here.
         res = super(invoice_merge, self).fields_view_get(cr, uid, view_id=view_id, view_type=view_type, context=context, toolbar=toolbar, submenu=False)
+        self._validate_criteria(cr, uid, context)
         return res
 
     def create_consolidated_invoice(self, cr, uid, ids, context=None):

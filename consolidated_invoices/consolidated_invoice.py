@@ -134,10 +134,15 @@ class consolidated_invoice(osv.osv):
         self.write(cr, uid, ids, {'state':'draft'})
         self.delete_workflow(cr, uid, ids)
         self.create_workflow(cr, uid, ids)
+        account_inv_obj = self.pool.get('account.invoice')
+        inv_ids = account_inv_obj.search(cr, uid, [('state','=','cancel'), ('consolidated_invoice_link.consolidated_invoice_id', 'in', ids)], context=None)
+        account_inv_obj.action_cancel_draft(cr, uid, inv_ids, *args)
         return True
 
     def action_date_assign(self, cr, uid, ids, *args):
-        # FIXME: implement this.
+        account_inv_obj = self.pool.get('account.invoice')
+        inv_ids = account_inv_obj.search(cr, uid, [('consolidated_invoice_link.consolidated_invoice_id', 'in', ids)], context=None)
+        account_inv_obj.action_date_assign(cr, uid, inv_ids, *args)
         return True
 
     def invoice_validate(self, cr, uid, ids, context=None):
@@ -154,7 +159,10 @@ class consolidated_invoice(osv.osv):
         return True
 
     def action_cancel(self, cr, uid, ids, context=None):
-        # FIXME: implement this.
+        self.write(cr, uid, ids, {'state':'cancel'})
+        account_inv_obj = self.pool.get('account.invoice')
+        inv_ids = account_inv_obj.search(cr, uid, [('consolidated_invoice_link.consolidated_invoice_id', 'in', ids)], context=context)
+        account_inv_obj.action_cancel(cr, uid, inv_ids, context=context)
         return True
 
     def move_line_id_payment_get(self, cr, uid, ids, *args):

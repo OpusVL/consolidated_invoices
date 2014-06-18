@@ -19,7 +19,7 @@ Invoices will only be allowed if:<br/>
                             </p>
                     </group>
                     <footer>
-                        <button name="merge_invoices" string="Create"
+                        <button name="create_consolidated_invoice" string="Create"
                             type="object" class="oe_highlight" />
                         or
                         <button string="Cancel" class="oe_link"

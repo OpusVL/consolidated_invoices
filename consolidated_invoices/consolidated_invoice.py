@@ -199,7 +199,8 @@ class consolidated_invoice(osv.osv):
         """
         assert len(ids) == 1, 'This option should only be used for a single id at a time.'
         self.write(cr, uid, ids, {'sent': True}, context=context)
-        return self.pool['report'].get_action(cr, uid, ids, 'account.report_consolidated_invoice', context=context)
+        return self.pool['report'].get_action(cr, uid, ids,
+            'consolidated_invoices.report_consolidated_invoice', context=context)
 
 class consolidated_invoice_link(osv.osv):
 

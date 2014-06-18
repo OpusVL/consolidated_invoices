@@ -14,7 +14,8 @@
     'update_xml': [
         'security/ir.model.access.csv',
         'consolidated_invoice_view.xml',
-        'consolidated_invoice_workflow.xml'
+        'consolidated_invoice_workflow.xml',
+        'report/report_consolidated_invoice.xml',
     ],
     'demo_xml': [],
     'test': [],

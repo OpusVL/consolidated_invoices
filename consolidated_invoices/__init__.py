@@ -1,1 +1,2 @@
 import consolidated_invoice
+import wizard

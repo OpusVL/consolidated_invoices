@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <record id="view_consolidated_invoice_selection" model="ir.ui.view">
+            <field name="name">Create Consolidated Invoice</field>
+            <field name="model">consolidated.invoice.selection</field>
+            <field name="arch" type="xml">
+                <form string="Create Consolidated Invoice" version="7.0">
+                    <group>
+                        <separator
+                            string="Are you sure you want to consolidate these invoices ?"
+                            colspan="4" />
+                        <p>
+Please note that:<br/><br/>
+Invoices will only be allowed if:<br/>
+* Invoices are in draft<br/>
+* Invoices belong to the same partner<br/>
+* Invoices are have same company, partner, address, currency, journal<br/><br/>
+                            </p>
+                    </group>
+                    <footer>
+                        <button name="merge_invoices" string="Create"
+                            type="object" class="oe_highlight" />
+                        or
+                        <button string="Cancel" class="oe_link"
+                            special="cancel" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <act_window name="Create Consolidated Invoice" res_model="consolidated.invoice.selection"
+            src_model="account.invoice" view_mode="form" target="new"
+            multi="True" key2="client_action_multi" id="action_view_consolidated_invoice_selection" />
+
+    </data>
+</openerp>
+
+

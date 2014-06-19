@@ -13,9 +13,9 @@ class invoice_merge(orm.TransientModel):
         'partner_id': fields.many2one('res.partner', 'Partner', change_default=True, readonly=True, required=True),
         'method': fields.selection([
             ('po', 'By Purchase Order Number'),
-            ('po_for_selection', 'By Purchase Order Number'),
+            ('po_for_selection', 'By Purchase Order Number on selected invoices'),
             ('period', 'By Period'),
-            ('po_and_period', 'By Period'),
+            ('po_and_period', 'By Purchase Order Number and Period'),
         ], 'Method', help='Consolidate your invoices by...', required=True),
         # FIXME: add date selection criteria.
         # FIXME: add invoice links?

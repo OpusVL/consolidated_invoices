@@ -61,7 +61,8 @@ class invoice_merge(orm.TransientModel):
         result = mod_obj._get_id(cr, uid, 'account', 'invoice_form')
         id = mod_obj.read(cr, uid, result, ['res_id'])
         consolidated_invoice_obj = self.pool.get('account.consolidated.invoice')
-        invoice_id = consolidated_invoice_obj.create_for_invoices(cr, uid, ids, context=context)
+        invoice_ids = context['active_ids']
+        invoice_id = consolidated_invoice_obj.create_for_invoices(cr, uid, invoice_ids, context=context)
         return {
             'domain': "[('id','=', %d)]" % invoice_id,
             'name': _('Consolidated Invoice'),

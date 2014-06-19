@@ -38,5 +38,14 @@ class invoice_merge(orm.TransientModel):
         # FIXME: add invoice links?
     }
 
+    def default_get(self, cr, uid, fields, context=None):
+        if not context:
+            context = {}
+        params = context.get('params', {})
+        partner_id = params.get('active_id', False)
+        defaults = super(invoice_merge, self).default_get(cr, uid, fields, context=context)
+        defaults.update({ 'partner_id': partner_id })
+        return defaults
+
     def consolidate_invoices(self, cr, uid, ids, context=None):
         pass

@@ -15,7 +15,8 @@
                     </group>
                     <separator/>
                     <group string="Selected invoices" col="1" attrs="{'invisible':[('method','!=','po_for_selection')]}">
-                        <field name="invoices" mode="tree" />
+                        <field name="partner_id" invisible="1" />
+                        <field name="invoices" mode="tree" domain="[('state','=','draft'),('consolidated_invoice_link','=',False),('partner_id','=',partner_id)]" />
                     </group>
                     <footer>
                         <button name="consolidate_invoices" string="Create" type="object" class="oe_highlight"/>

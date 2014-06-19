@@ -2,6 +2,7 @@
 from openerp.osv import fields, osv, orm
 import openerp.addons.decimal_precision as dp
 import re
+import time
 
 
 class consolidated_invoice(osv.osv):
@@ -201,6 +202,35 @@ class consolidated_invoice(osv.osv):
         self.write(cr, uid, ids, {'sent': True}, context=context)
         return self.pool['report'].get_action(cr, uid, ids,
             'consolidated_invoices.report_consolidated_invoice', context=context)
+
+    def create_for_invoices(self, cr, uid, ids, context=None):
+        """
+        This creates a consolidated invoice for a set of invoices.
+        """
+        account_pool = self.pool.get('account.invoice')
+        invoices = account_pool.browse(cr, uid, ids, context=context)
+        journal_id = invoices[0].journal_id.id
+        reference = invoices[0].reference or 'REF'
+        partner = invoices[0].partner_id
+        partner_id = partner.id
+        company_id = invoices[0].company_id.id
+        currency_id = invoices[0].currency_id.id
+        partner_name = partner.name
+
+        new_obj = {
+            'line_text': "Consolidated Invoice for %s" % partner_name,
+            # /opt/odoo/openerp/osv/orm.py +3794
+            'invoice_links': [(0, False, {'invoice_id':i}) for i in ids],
+            'reference': reference,
+            'state': 'draft',
+            'date_invoice': time.strftime('%Y-%m-%d'),
+            'currency_id': currency_id,
+            'journal_id': journal_id,
+            'company_id': company_id,
+            'partner_id': partner_id,
+        }
+        invoice_ids = self.create(cr, uid, new_obj, context=context)
+        return invoice_ids
 
 class consolidated_invoice_link(osv.osv):
 

@@ -50,20 +50,20 @@ class invoice_merge(orm.TransientModel):
                         context=None, toolbar=False, submenu=False):
         if context is None:
             context = {}
-        # FIXME: implement validation of the invoices here.
         res = super(invoice_merge, self).fields_view_get(cr, uid, view_id=view_id, view_type=view_type, context=context, toolbar=toolbar, submenu=False)
         self._validate_criteria(cr, uid, context)
         return res
 
     def create_consolidated_invoice(self, cr, uid, ids, context=None):
-        # FIXME: create the new consolidated invoice.
         mod_obj = self.pool.get('ir.model.data')
         if context is None:
             context = {}
         result = mod_obj._get_id(cr, uid, 'account', 'invoice_form')
         id = mod_obj.read(cr, uid, result, ['res_id'])
+        consolidated_invoice_obj = self.pool.get('account.consolidated.invoice')
+        invoice_id = consolidated_invoice_obj.create_for_invoices(cr, uid, ids, context=context)
         return {
-            'domain': "[('id','in', [" + ','.join(map(str, allinvoices.keys())) + "])]",
+            'domain': "[('id','=', %d)]" % invoice_id,
             'name': _('Consolidated Invoice'),
             'view_type': 'form',
             'view_mode': 'tree,form',

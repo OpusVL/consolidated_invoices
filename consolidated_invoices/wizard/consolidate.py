@@ -16,7 +16,23 @@ class invoice_merge(orm.TransientModel):
             ('po_for_selection', 'By Purchase Order Number on selected invoices'),
             ('period', 'By Period'),
             ('po_and_period', 'By Purchase Order Number and Period'),
-        ], 'Method', help='Consolidate your invoices by...', required=True),
+        ], 'Method', help='Consolidate your invoices by...', required=True), # FIXME: add proper help text.
+        'period': fields.selection([
+            ('daily', 'Daily'),
+            ('weekly', 'Weekly'),
+            ('monthly', 'Monthly'),
+            ('endofmonth', 'Monthly - End of month'),
+        ], 'Period', help=''),
+        'dayofweek': fields.selection([
+            ('monday', 'Monday'),
+            ('tuesday', 'Tuesday'),
+            ('wednesday', 'Wednesday'),
+            ('thursday', 'Thursday'),
+            ('friday', 'Friday'),
+            ('saturday', 'Saturday'),
+            ('sunday', 'Sunday'),
+        ], 'Day of week', help=''),
+        'day': fields.integer('Day of month'),
         # FIXME: add date selection criteria.
         # FIXME: add invoice links?
     }

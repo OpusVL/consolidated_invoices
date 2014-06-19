@@ -9,9 +9,12 @@
                 <form string="Consolidate Invoices">
                     <group string="Consolidation criteria" col="4">
                         <field name="method" />
-                        <field name="period" />
-                        <field name="dayofweek" />
-                        <field name="day" />
+                        <field name="period" attrs="{'invisible':[('method','not in',['period','po_and_period'])]}"/>
+                        <field name="dayofweek" attrs="{'invisible':['|',('method','not in',['period','po_and_period']),('period','!=','weekly')]}"/>
+                        <field name="day" attrs="{'invisible':['|',('method','not in',['period','po_and_period']),('period','!=','monthly')]}"/>
+                    </group>
+                    <separator/>
+                    <group string="Selected invoices" col="1" attrs="{'invisible':[('method','!=','po_for_selection')]}">
                         <field name="invoices" mode="tree" />
                     </group>
                     <footer>

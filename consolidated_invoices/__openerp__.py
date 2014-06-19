@@ -17,6 +17,7 @@
         'consolidated_invoice_workflow.xml',
         'report/report_consolidated_invoice.xml',
         'wizard/invoice_selection_view.xml',
+        'wizard/consolidate_view.xml',
     ],
     'demo_xml': [],
     'test': [],

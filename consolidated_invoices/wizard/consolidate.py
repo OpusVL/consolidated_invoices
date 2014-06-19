@@ -33,6 +33,7 @@ class invoice_merge(orm.TransientModel):
             ('sunday', 'Sunday'),
         ], 'Day of week', help=''),
         'day': fields.integer('Day of month'),
+        'invoices': fields.many2many('account.invoice', string='Invoices'),
         # FIXME: add date selection criteria.
         # FIXME: add invoice links?
     }

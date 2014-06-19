@@ -12,6 +12,7 @@
                         <field name="period" />
                         <field name="dayofweek" />
                         <field name="day" />
+                        <field name="invoices" mode="tree" />
                     </group>
                     <footer>
                         <button name="consolidate_invoices" string="Create" type="object" class="oe_highlight"/>

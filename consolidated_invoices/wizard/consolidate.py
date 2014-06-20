@@ -34,15 +34,12 @@ class consolidator(orm.TransientModel):
         ], 'Day of week', help=''),
         'day': fields.integer('Day of month'),
         'invoices': fields.many2many('account.invoice', string='Invoices'),
-        # FIXME: add date selection criteria.
-        # FIXME: add invoice links?
     }
 
     def default_get(self, cr, uid, fields, context=None):
         if not context:
             context = {}
-        params = context.get('params', {})
-        partner_id = params.get('active_id', False)
+        partner_id = context.get('partner_id', False)
         defaults = super(self.__class__, self).default_get(cr, uid, fields, context=context)
         defaults.update({ 'partner_id': partner_id })
         return defaults

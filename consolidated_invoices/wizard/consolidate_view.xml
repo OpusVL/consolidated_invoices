@@ -28,7 +28,7 @@
         </record>
 
         <act_window name="Consolidate Invoices" res_model="consolidated.invoice.consolidation"
-            src_model="res.partner" view_mode="form" 
+            src_model="res.partner" view_mode="form" context="{'partner_id':active_id}"
             id="action_view_consolidated_invoice_consolidation" />
     </data>
 </openerp>

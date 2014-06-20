@@ -228,22 +228,69 @@ class consolidated_invoice(osv.osv):
             invoice_info.append({'ids': ids, 'data':record})
         return invoice_info
 
-    def consolidate_invoices(self, cr, uid, data, context=None):
-        method = data.method
-
+    def _consolidate_by_period(self, cr, uid, data, context=None):
         # for periods,
         # a) limit end point
         # b) find first date?
         # c) do a fake table of the dates to group by?
         by_period_sql = """
-        select 
+        select min(date_invoice) as min_date, max(date_invoice) as max_date
+        from account_invoice i
+        where partner_id = %s
+        and i.state = 'draft'
+        and i.id not in (select invoice_id from account_consolidated_invoice_link)
         """
+        cr.execute(by_period_sql, (data.partner_id.id,))
+        records = cr.fetchall()
+        mindate, maxdate = records[0]
+        # also figure out most recent date based on current date.
+        year, mon, day = time.localtime(time.time())[0:3]
+        params = [data.partner_id.id]
+        if data.period == 'daily':
+            sql_group = """
+                select 'Consolidated invoice for ' || date_invoice::varchar as reference, 
+                        partner_id, i.company_id, journal_id, currency_id, p.name as partner_name, 
+                        array_agg(i.id) as ids
+                from account_invoice i
+                inner join res_partner p on partner_id = p.id
+                where partner_id = %s
+                and i.state = 'draft'
+                and i.id not in (select invoice_id from account_consolidated_invoice_link)
+                group by date_invoice, partner_id, i.company_id, journal_id, currency_id, p.name
+            """
+        elif data.period == 'weekly':
+            # FIXME: tweak the day of the week.
+            sql_group = """
+                select array_agg(i.id) as ids, 'Consolidated invoice for week commencing ' || generate_series::date::varchar as reference,
+                        partner_id, i.company_id, journal_id, currency_id, p.name as partner_name
+                from account_invoice i
+                inner join res_partner p on partner_id = p.id
+                inner join generate_series(current_date::date, %s::date - '7 day'::interval, '-7 day') 
+                    on date_invoice between generate_series::date and generate_series::date + '6 days'::interval 
+                where partner_id = %s
+                and i.state = 'draft'
+                and i.id not in (select invoice_id from account_consolidated_invoice_link)
+                group by partner_id, i.company_id, journal_id, currency_id, p.name, generate_series::date
+            """
+            params = [mindate] + params
+        cr.execute(sql_group, tuple(params))
+        records = cr.dictfetchall()
+        invoice_info = []
+        for record in records:
+            ids = record['ids']
+            del(record['ids'])
+            invoice_info.append({'ids': ids, 'data':record})
+        return invoice_info
+
+    def consolidate_invoices(self, cr, uid, data, context=None):
+        method = data.method
+
         if method == 'po':
             invoice_info = self._consolidate_by_po(cr, uid, data, context=context)
         elif method == 'po_for_selection':
             invoice_info = self._consolidate_by_po(cr, uid, data, [i.id for i in data.invoices], context=context)
         elif method == 'period':
-            pass
+            invoice_info = self._consolidate_by_period(cr, uid, data, context=context)
         elif method == 'po_and_period':
             pass
         else:
@@ -260,7 +307,6 @@ class consolidated_invoice(osv.osv):
     def _create_for_invoices(self, cr, uid, ids, data, context=None):
         new_obj = {
             'line_text': "Consolidated Invoice for %s" % data['partner_name'],
-            # /opt/odoo/openerp/osv/orm.py +3794
             'invoice_links': [(0, False, {'invoice_id':i}) for i in ids],
             'reference': data['reference'],
             'state': 'draft',

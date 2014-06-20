@@ -199,9 +199,76 @@ class consolidated_invoice(osv.osv):
         """This function prints the invoice.
         """
         assert len(ids) == 1, 'This option should only be used for a single id at a time.'
-        self.write(cr, uid, ids, {'sent': True}, context=context)
+        #self.write(cr, uid, ids, {'sent': True}, context=context)
         return self.pool['report'].get_action(cr, uid, ids,
             'consolidated_invoices.report_consolidated_invoice', context=context)
+
+    def _consolidate_by_po(self, cr, uid, data, context=None):
+        by_po_sql = """
+        select reference, partner_id, i.company_id, journal_id, currency_id, p.name as partner_name, array_agg(i.id) as ids
+        from account_invoice i
+        inner join res_partner p on partner_id = p.id
+        where partner_id = %%s
+        and i.state = 'draft'
+        and i.id not in (select invoice_id from account_consolidated_invoice_link)
+        %s
+        group by reference, partner_id, i.company_id, journal_id, currency_id, p.name
+        """ % ''
+        cr.execute(by_po_sql, (data.partner_id.id,))
+        records = cr.dictfetchall()
+        invoice_info = []
+        for record in records:
+            ids = record['ids']
+            del(record['ids'])
+            invoice_info.append({'ids': ids, 'data':record})
+        return invoice_info
+
+    def consolidate_invoices(self, cr, uid, data, context=None):
+        method = data.method
+
+        # for periods,
+        # a) limit end point
+        # b) find first date?
+        # c) do a fake table of the dates to group by?
+        by_period_sql = """
+        select 
+        """
+        if method == 'po':
+            invoice_info = self._consolidate_by_po(cr, uid, data, context=context)
+            # divide up the PO's by po number
+        elif method == 'po_for_selection':
+            pass
+            # limit ourselves to the selection provided.
+        elif method == 'period':
+            pass
+        elif method == 'po_and_period':
+            pass
+        else:
+            pass
+            # throw an exception.
+
+        invoice_ids = []
+        for invoice in invoice_info:
+            inv_id = self._create_for_invoices(cr, uid, invoice['ids'], invoice['data'], context=context)
+            invoice_ids.append(inv_id)
+
+        return invoice_ids
+
+    def _create_for_invoices(self, cr, uid, ids, data, context=None):
+        new_obj = {
+            'line_text': "Consolidated Invoice for %s" % data['partner_name'],
+            # /opt/odoo/openerp/osv/orm.py +3794
+            'invoice_links': [(0, False, {'invoice_id':i}) for i in ids],
+            'reference': data['reference'],
+            'state': 'draft',
+            'date_invoice': time.strftime('%Y-%m-%d'),
+            'currency_id': data['currency_id'],
+            'journal_id': data['journal_id'],
+            'company_id': data['company_id'],
+            'partner_id': data['partner_id'],
+        }
+        invoice_id = self.create(cr, uid, new_obj, context=context)
+        return invoice_id
 
     def create_for_invoices(self, cr, uid, ids, context=None):
         """
@@ -217,20 +284,15 @@ class consolidated_invoice(osv.osv):
         currency_id = invoices[0].currency_id.id
         partner_name = partner.name
 
-        new_obj = {
-            'line_text': "Consolidated Invoice for %s" % partner_name,
-            # /opt/odoo/openerp/osv/orm.py +3794
-            'invoice_links': [(0, False, {'invoice_id':i}) for i in ids],
-            'reference': reference,
-            'state': 'draft',
-            'date_invoice': time.strftime('%Y-%m-%d'),
+        invoice_id = self._create_for_invoices(cr, uid, ids, {
+            'partner_id': partner_id,
             'currency_id': currency_id,
+            'partner_name': partner_name,
             'journal_id': journal_id,
             'company_id': company_id,
-            'partner_id': partner_id,
-        }
-        invoice_ids = self.create(cr, uid, new_obj, context=context)
-        return invoice_ids
+            'reference': reference,
+        }, context=context)
+        return invoice_id
 
 class consolidated_invoice_link(osv.osv):
 

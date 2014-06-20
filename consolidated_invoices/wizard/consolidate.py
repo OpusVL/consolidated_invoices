@@ -44,22 +44,22 @@ class consolidator(orm.TransientModel):
         defaults.update({ 'partner_id': partner_id })
         return defaults
 
-    def consolidate_invoictes(self, cr, uid, ids, context=None):
+    def consolidate_invoices(self, cr, uid, ids, context=None):
         mod_obj = self.pool.get('ir.model.data')
         if context is None:
             context = {}
-        result = mod_obj._get_id(cr, uid, 'consolidated_invoices', 'consolidated_invoice_form')
+        result = mod_obj._get_id(cr, uid, 'consolidated_invoices', 'consolidated_invoice_tree')
         id = mod_obj.read(cr, uid, result, ['res_id'])
         consolidated_invoice_obj = self.pool.get('account.consolidated.invoice')
-        #invoice_id = consolidated_invoice_obj.create_for_invoices(cr, uid, invoice_ids, context=context)
-        invoice_id = 1
+        data = self.browse(cr, uid, ids[0], context=context)
+        invoice_ids = consolidated_invoice_obj.consolidate_invoices(cr, uid, data, context=context)
         return {
             'name': _('Consolidated Invoice'),
             'view_type': 'form',
-            'view_mode': 'form',
+            'view_mode': 'tree',
             'view_id': id['res_id'],
             'res_model': 'account.consolidated.invoice',
-            'res_id': invoice_id,
             'target': 'current',
+            'domain': "[('id', 'in', [%s])]" % ','.join([ str(i) for i in invoice_ids]),
             'type': 'ir.actions.act_window',
         }

@@ -4,7 +4,7 @@ from openerp.osv import orm, fields
 from openerp.tools.translate import _
 
 
-class invoice_merge(orm.TransientModel):
+class consolidator(orm.TransientModel):
     _name = "consolidated.invoice.consolidation"
     _description = "Automatic Invoice Consolidation"
 
@@ -43,7 +43,7 @@ class invoice_merge(orm.TransientModel):
             context = {}
         params = context.get('params', {})
         partner_id = params.get('active_id', False)
-        defaults = super(invoice_merge, self).default_get(cr, uid, fields, context=context)
+        defaults = super(self.__class__, self).default_get(cr, uid, fields, context=context)
         defaults.update({ 'partner_id': partner_id })
         return defaults
 

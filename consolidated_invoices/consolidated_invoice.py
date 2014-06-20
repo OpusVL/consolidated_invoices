@@ -244,7 +244,6 @@ class consolidated_invoice(osv.osv):
         records = cr.fetchall()
         mindate, maxdate = records[0]
         # also figure out most recent date based on current date.
-        year, mon, day = time.localtime(time.time())[0:3]
         params = [data.partner_id.id]
         if data.period == 'daily':
             sql_group = """
@@ -259,20 +258,22 @@ class consolidated_invoice(osv.osv):
                 group by date_invoice, partner_id, i.company_id, journal_id, currency_id, p.name
             """
         elif data.period == 'weekly':
-            # FIXME: tweak the day of the week.
+            days = ['sunday', 'monday', 'tuesday', 'wednesday' ,'thursday' ,'friday' ,'saturday']
+            dow = days.index(data.dayofweek)
             sql_group = """
                 select array_agg(i.id) as ids, 'Consolidated invoice for week commencing ' || generate_series::date::varchar as reference,
                         partner_id, i.company_id, journal_id, currency_id, p.name as partner_name
                 from account_invoice i
                 inner join res_partner p on partner_id = p.id
-                inner join generate_series(current_date::date, %s::date - '7 day'::interval, '-7 day') 
+                inner join generate_series(current_date::date + ((%s - extract(dow from current_date) - 7)::varchar || ' days')::interval
+                        , %s::date - '7 day'::interval, '-7 day') 
                     on date_invoice between generate_series::date and generate_series::date + '6 days'::interval 
                 where partner_id = %s
                 and i.state = 'draft'
                 and i.id not in (select invoice_id from account_consolidated_invoice_link)
                 group by partner_id, i.company_id, journal_id, currency_id, p.name, generate_series::date
             """
-            params = [mindate] + params
+            params = [dow, mindate] + params
         cr.execute(sql_group, tuple(params))
         records = cr.dictfetchall()
         invoice_info = []

@@ -203,7 +203,12 @@ class consolidated_invoice(osv.osv):
         return self.pool['report'].get_action(cr, uid, ids,
             'consolidated_invoices.report_consolidated_invoice', context=context)
 
-    def _consolidate_by_po(self, cr, uid, data, context=None):
+    def _consolidate_by_po(self, cr, uid, data, invoice_limit=None, context=None):
+        extra_sql = ""
+        params = [data.partner_id.id]
+        if invoice_limit:
+            extra_sql = "and i.id in (%s)" % (', '.join(['%s' for i in invoice_limit]))
+            params += invoice_limit
         by_po_sql = """
         select reference, partner_id, i.company_id, journal_id, currency_id, p.name as partner_name, array_agg(i.id) as ids
         from account_invoice i
@@ -213,8 +218,8 @@ class consolidated_invoice(osv.osv):
         and i.id not in (select invoice_id from account_consolidated_invoice_link)
         %s
         group by reference, partner_id, i.company_id, journal_id, currency_id, p.name
-        """ % ''
-        cr.execute(by_po_sql, (data.partner_id.id,))
+        """ % extra_sql
+        cr.execute(by_po_sql, tuple(params))
         records = cr.dictfetchall()
         invoice_info = []
         for record in records:
@@ -235,10 +240,8 @@ class consolidated_invoice(osv.osv):
         """
         if method == 'po':
             invoice_info = self._consolidate_by_po(cr, uid, data, context=context)
-            # divide up the PO's by po number
         elif method == 'po_for_selection':
-            pass
-            # limit ourselves to the selection provided.
+            invoice_info = self._consolidate_by_po(cr, uid, data, [i.id for i in data.invoices], context=context)
         elif method == 'period':
             pass
         elif method == 'po_and_period':

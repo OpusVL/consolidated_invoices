@@ -32,7 +32,7 @@ class consolidator(orm.TransientModel):
             ('saturday', 'Saturday'),
             ('sunday', 'Sunday'),
         ], 'Day of week', help=''),
-        'day': fields.integer('Day of month'),
+        'day': fields.integer('Day of month'), # FIXME: validate the range of this.
         'invoices': fields.many2many('account.invoice', string='Invoices'),
     }
 

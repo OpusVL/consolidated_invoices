@@ -289,6 +289,20 @@ class consolidated_invoice(osv.osv):
                 group by partner_id, i.company_id, journal_id, currency_id, p.name, generate_series::date
             """
             params = [data.day, mindate] + params
+        elif data.period == 'endofmonth':
+            # FIXME: make the month more human readable
+            sql_group = """
+                select 'Consolidated invoice for month ' || extract(month from date_invoice)::varchar as reference, 
+                        partner_id, i.company_id, journal_id, currency_id, p.name as partner_name, 
+                        array_agg(i.id) as ids
+                from account_invoice i
+                inner join res_partner p on partner_id = p.id
+                where partner_id = %s
+                and i.state = 'draft'
+                and i.id not in (select invoice_id from account_consolidated_invoice_link)
+                and date_invoice < date_trunc('month', current_date)
+                group by extract(month from date_invoice), partner_id, i.company_id, journal_id, currency_id, p.name
+            """
         cr.execute(sql_group, tuple(params))
         records = cr.dictfetchall()
         invoice_info = []

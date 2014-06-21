@@ -228,22 +228,23 @@ class consolidated_invoice(osv.osv):
             invoice_info.append({'ids': ids, 'data':record})
         return invoice_info
 
-    def _consolidate_by_period(self, cr, uid, data, context=None):
+    def _consolidate_by_period(self, cr, uid, data, by_po=False, context=None):
         # for periods,
         # a) limit end point
         # b) find first date?
         # c) do a fake table of the dates to group by?
-        by_period_sql = """
-        select min(date_invoice) as min_date, max(date_invoice) as max_date
-        from account_invoice i
-        where partner_id = %s
-        and i.state = 'draft'
-        and i.id not in (select invoice_id from account_consolidated_invoice_link)
-        """
-        cr.execute(by_period_sql, (data.partner_id.id,))
-        records = cr.fetchall()
-        mindate, maxdate = records[0]
-        # also figure out most recent date based on current date.
+        if data.period in ('weekly', 'monthly'):
+            by_period_sql = """
+            select min(date_invoice) as min_date, max(date_invoice) as max_date
+            from account_invoice i
+            where partner_id = %s
+            and i.state = 'draft'
+            and i.id not in (select invoice_id from account_consolidated_invoice_link)
+            """
+            cr.execute(by_period_sql, (data.partner_id.id,))
+            records = cr.fetchall()
+            mindate, maxdate = records[0]
+
         params = [data.partner_id.id]
         if data.period == 'daily':
             sql_group = """

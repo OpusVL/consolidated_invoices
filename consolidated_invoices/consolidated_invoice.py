@@ -210,14 +210,14 @@ class consolidated_invoice(osv.osv):
             extra_sql = "and i.id in (%s)" % (', '.join(['%s' for i in invoice_limit]))
             params += invoice_limit
         by_po_sql = """
-        select reference, partner_id, i.company_id, journal_id, currency_id, p.name as partner_name, array_agg(i.id) as ids
+        select i.name as reference, partner_id, i.company_id, journal_id, currency_id, p.name as partner_name, array_agg(i.id) as ids
         from account_invoice i
         inner join res_partner p on partner_id = p.id
         where partner_id = %%s
         and i.state = 'draft'
         and i.id not in (select invoice_id from account_consolidated_invoice_link)
         %s
-        group by reference, partner_id, i.company_id, journal_id, currency_id, p.name
+        group by i.name, partner_id, i.company_id, journal_id, currency_id, p.name
         """ % extra_sql
         cr.execute(by_po_sql, tuple(params))
         records = cr.dictfetchall()
@@ -246,65 +246,78 @@ class consolidated_invoice(osv.osv):
             mindate, maxdate = records[0]
 
         params = [data.partner_id.id]
+        reference_field = 'i.name as reference'
         if data.period == 'daily':
+            if not by_po:
+                reference_field = "'Consolidated invoice for ' || date_invoice::varchar as reference"
             sql_group = """
-                select 'Consolidated invoice for ' || date_invoice::varchar as reference, 
+                select %s, 
                         partner_id, i.company_id, journal_id, currency_id, p.name as partner_name, 
                         array_agg(i.id) as ids
                 from account_invoice i
                 inner join res_partner p on partner_id = p.id
-                where partner_id = %s
+                where partner_id = %%s
                 and i.state = 'draft'
                 and i.id not in (select invoice_id from account_consolidated_invoice_link)
-                group by date_invoice, partner_id, i.company_id, journal_id, currency_id, p.name
+                group by %s date_invoice, partner_id, i.company_id, journal_id, currency_id, p.name
             """
         elif data.period == 'weekly':
             days = ['sunday', 'monday', 'tuesday', 'wednesday' ,'thursday' ,'friday' ,'saturday']
             dow = days.index(data.dayofweek)
+            if not by_po:
+                reference_field = "'Consolidated invoice for week commencing ' || generate_series::date::varchar as reference"
             sql_group = """
-                select array_agg(i.id) as ids, 'Consolidated invoice for week commencing ' || generate_series::date::varchar as reference,
+                select array_agg(i.id) as ids, %s,
                         partner_id, i.company_id, journal_id, currency_id, p.name as partner_name
                 from account_invoice i
                 inner join res_partner p on partner_id = p.id
-                inner join generate_series(current_date::date + ((%s - extract(dow from current_date) - 7)::varchar || ' days')::interval
-                        , %s::date - '7 day'::interval, '-7 day') 
+                inner join generate_series(current_date::date + ((%%s - extract(dow from current_date) - 7)::varchar || ' days')::interval
+                        , %%s::date - '7 day'::interval, '-7 day') 
                     on date_invoice between generate_series::date and generate_series::date + '6 days'::interval 
-                where partner_id = %s
+                where partner_id = %%s
                 and i.state = 'draft'
                 and i.id not in (select invoice_id from account_consolidated_invoice_link)
-                group by partner_id, i.company_id, journal_id, currency_id, p.name, generate_series::date
+                group by %s partner_id, i.company_id, journal_id, currency_id, p.name, generate_series::date
             """
             params = [dow, mindate] + params
         elif data.period == 'monthly':
+            if not by_po:
+                reference_field = "'Consolidated invoice for month commencing ' || generate_series::date::varchar as reference"
             sql_group = """
-                select array_agg(i.id) as ids, 'Consolidated invoice for month commencing ' || generate_series::date::varchar as reference,
+                select array_agg(i.id) as ids, %s,
                         partner_id, i.company_id, journal_id, currency_id, p.name as partner_name
                 from account_invoice i
                 inner join res_partner p on partner_id = p.id
-                inner join generate_series(current_date::date + ((%s - extract(day from current_date))::varchar || ' days')::interval - '1 month'::interval
-                        , %s::date - '1 month'::interval, '-1 month') 
+                inner join generate_series(current_date::date + ((%%s - extract(day from current_date))::varchar || ' days')::interval - '1 month'::interval
+                        , %%s::date - '1 month'::interval, '-1 month') 
                     on date_invoice between generate_series::date and generate_series::date + '1 month'::interval - '1 day'::interval
-                where partner_id = %s
+                where partner_id = %%s
                 and i.state = 'draft'
                 and i.id not in (select invoice_id from account_consolidated_invoice_link)
-                group by partner_id, i.company_id, journal_id, currency_id, p.name, generate_series::date
+                group by %s partner_id, i.company_id, journal_id, currency_id, p.name, generate_series::date
             """
             params = [data.day, mindate] + params
         elif data.period == 'endofmonth':
             # FIXME: make the month more human readable
+            if not by_po:
+                reference_field = "'Consolidated invoice for month ' || extract(month from date_invoice)::varchar as reference"
             sql_group = """
-                select 'Consolidated invoice for month ' || extract(month from date_invoice)::varchar as reference, 
+                select %s, 
                         partner_id, i.company_id, journal_id, currency_id, p.name as partner_name, 
                         array_agg(i.id) as ids
                 from account_invoice i
                 inner join res_partner p on partner_id = p.id
-                where partner_id = %s
+                where partner_id = %%s
                 and i.state = 'draft'
                 and i.id not in (select invoice_id from account_consolidated_invoice_link)
                 and date_invoice < date_trunc('month', current_date)
-                group by extract(month from date_invoice), partner_id, i.company_id, journal_id, currency_id, p.name
+                group by %s extract(month from date_invoice), partner_id, i.company_id, journal_id, currency_id, p.name
             """
-        cr.execute(sql_group, tuple(params))
+        group_by_extra = ''
+        if by_po:
+            group_by_extra = 'i.name,'
+        sql = sql_group % (reference_field, group_by_extra)
+        cr.execute(sql, tuple(params))
         records = cr.dictfetchall()
         invoice_info = []
         for record in records:
@@ -323,7 +336,7 @@ class consolidated_invoice(osv.osv):
         elif method == 'period':
             invoice_info = self._consolidate_by_period(cr, uid, data, context=context)
         elif method == 'po_and_period':
-            pass
+            invoice_info = self._consolidate_by_period(cr, uid, data, by_po=True, context=context)
         else:
             pass
             # throw an exception.
@@ -357,7 +370,7 @@ class consolidated_invoice(osv.osv):
         account_pool = self.pool.get('account.invoice')
         invoices = account_pool.browse(cr, uid, ids, context=context)
         journal_id = invoices[0].journal_id.id
-        reference = invoices[0].reference or 'REF'
+        reference = invoices[0].reference or invoices[0].name
         partner = invoices[0].partner_id
         partner_id = partner.id
         company_id = invoices[0].company_id.id

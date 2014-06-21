@@ -46,9 +46,8 @@
             <field name="arch" type="xml">
                 <tree colors="blue:state == 'draft';black:state in ('open');gray:state == 'cancel'" string="Invoice">
                     <field name="date_invoice"/>
-                    <field name="reference" invisible="1"/>
+                    <field name="reference"/>
                     <field name="partner_id" groups="base.group_user"/>
-                    <field name="name"/>
                     <field name="line_text"/>
                     <field name="company_id" groups="base.group_multi_company" widget="selection"/>
                     <field name="amount_untaxed" sum="Untaxed Amount"/>

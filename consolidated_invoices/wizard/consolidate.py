@@ -41,7 +41,7 @@ class consolidator(orm.TransientModel):
             context = {}
         partner_id = context.get('partner_id', False)
         defaults = super(self.__class__, self).default_get(cr, uid, fields, context=context)
-        defaults.update({ 'partner_id': partner_id })
+        defaults.update({ 'partner_id': partner_id, 'day': 1 })
         return defaults
 
     def consolidate_invoices(self, cr, uid, ids, context=None):

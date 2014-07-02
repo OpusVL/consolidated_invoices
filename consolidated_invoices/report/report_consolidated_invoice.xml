@@ -102,7 +102,7 @@
     name="consolidated_invoices.report_consolidated_invoice"
     file="consolidated_invoices.report_consolidated_invoice"
     attachment_use="True"
-    attachment="(object.state in ('open','paid')) and ('INV'+(object.reference or '').replace('/','')+'.pdf')"
+    attachment="(object.state in ('open','paid')) and 'CI' + ('INV'+(object.reference or '').replace('/','')+'.pdf')"
 />
 </data>
 </openerp>

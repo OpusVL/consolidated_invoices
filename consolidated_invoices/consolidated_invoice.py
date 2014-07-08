@@ -159,6 +159,9 @@ class consolidated_invoice(osv.osv):
         self.write(cr, uid, ids, {'state':'open'}, context=context)
         account_inv_obj = self.pool.get('account.invoice')
         inv_ids = account_inv_obj.search(cr, uid, [('state','=','draft'), ('consolidated_invoice_link.consolidated_invoice_id', 'in', ids)], context=context)
+        account_inv_obj.action_date_assign(cr, uid, inv_ids, context=context)
+        account_inv_obj.action_move_create(cr, uid, inv_ids, context=context)
+        account_inv_obj.action_number(cr, uid, inv_ids, context=context)
         account_inv_obj.invoice_validate(cr, uid, inv_ids, context=context)
         return True
 
@@ -185,7 +188,7 @@ class consolidated_invoice(osv.osv):
             'context': {
                 'payment_expected_currency': inv.currency_id.id,
                 'default_partner_id': self.pool.get('res.partner')._find_accounting_partner(inv.partner_id).id,
-                'default_amount': inv.type in ('out_refund', 'in_refund') and -inv.residual or inv.residual,
+                'default_amount': inv.type in ('out_refund', 'in_refund') and -inv.residual or inv.residual, # FIXME: need to calculate this.
                 'default_reference': inv.name,
                 'close_after_process': True,
                 'invoice_type': 'out_invoice',

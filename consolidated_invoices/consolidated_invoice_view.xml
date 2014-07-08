@@ -83,6 +83,7 @@
                     <button name="invoice_print" string="Print" type="object" attrs="{'invisible':[('state', '!=', 'open')]}" class="oe_highlight" groups="base.group_user"/>
                     <button name="invoice_print" string="Print Invoice" type="object" attrs="{'invisible':[('state', '!=', 'open')]}" groups="base.group_user"/>
                     <button name="invoice_open" states="draft" string="Validate" class="oe_highlight" groups="base.group_user"/>
+                    <button name="invoice_pay_customer" states="open" type="object" string="Register Payment" class="oe_highlight" groups="base.group_user"/>
                     <button name="invoice_cancel" states="draft,open" string="Cancel Invoice" groups="base.group_no_one"/>
                     <button name="action_cancel_draft" states="cancel" string="Reset to Draft" type="object" groups="base.group_user"/>
                     <field name="state" widget="statusbar" nolabel="1" statusbar_visible="draft,open,paid" />

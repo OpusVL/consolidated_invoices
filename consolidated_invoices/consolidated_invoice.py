@@ -3,6 +3,7 @@ from openerp.osv import fields, osv, orm
 import openerp.addons.decimal_precision as dp
 import re
 import time
+from openerp.tools.translate import _
 
 
 class consolidated_invoice(osv.osv):
@@ -160,6 +161,39 @@ class consolidated_invoice(osv.osv):
         inv_ids = account_inv_obj.search(cr, uid, [('state','=','draft'), ('consolidated_invoice_link.consolidated_invoice_id', 'in', ids)], context=context)
         account_inv_obj.invoice_validate(cr, uid, inv_ids, context=context)
         return True
+
+    def invoice_pay_customer(self, cr, uid, ids, context=None):
+        if not ids: return []
+        # need the corresponding invoices movement ids
+        account_inv_obj = self.pool.get('account.invoice')
+        inv_ids = account_inv_obj.search(cr, uid, [('consolidated_invoice_link.consolidated_invoice_id', 'in', ids)], context=context)
+        inv_info = account_inv_obj.read(cr, uid, inv_ids, ['move_id'])
+        move_ids = [ inv['move_id'] for inv in inv_info if inv['move_id'] ]
+        dummy, view_id = self.pool.get('ir.model.data').get_object_reference(cr, uid, 'account_voucher', 'view_vendor_receipt_dialog_form')
+
+        inv = self.browse(cr, uid, ids[0], context=context)
+        return {
+            'name':_("Pay Invoice"),
+            'view_mode': 'form',
+            'view_id': view_id,
+            'view_type': 'form',
+            'res_model': 'account.voucher',
+            'type': 'ir.actions.act_window',
+            'nodestroy': True,
+            'target': 'new',
+            'domain': '[]',
+            'context': {
+                'payment_expected_currency': inv.currency_id.id,
+                'default_partner_id': self.pool.get('res.partner')._find_accounting_partner(inv.partner_id).id,
+                'default_amount': inv.type in ('out_refund', 'in_refund') and -inv.residual or inv.residual,
+                'default_reference': inv.name,
+                'close_after_process': True,
+                'invoice_type': 'out_invoice',
+                'move_line_ids': movement_ids,
+                'default_type': inv.type in ('out_invoice','out_refund') and 'receipt' or 'payment',
+                'type': inv.type in ('out_invoice','out_refund') and 'receipt' or 'payment'
+            }
+        }
 
     def confirm_paid(self, cr, uid, ids, context=None):
         if context is None:
@@ -438,7 +472,6 @@ class consolidated_invoice_link(osv.osv):
             if ci_link:
                 result[ci_link[0].id] = True
         return result.keys()
-
 
     _name = 'account.consolidated.invoice.link'
     _description = 'Consolidated invoice'

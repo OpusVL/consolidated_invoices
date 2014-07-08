@@ -9,7 +9,7 @@
     """,
     'author': 'OpusVL',
     'website': 'http://www.opusvl.com',
-    'depends': ['sale', 'purchase', 'account_payment', 'account_accountant'],
+    'depends': ['sale', 'purchase', 'account_payment', 'account_accountant', 'account_voucher'],
     'init_xml': [],
     'data': [
         'security/ir.model.access.csv',

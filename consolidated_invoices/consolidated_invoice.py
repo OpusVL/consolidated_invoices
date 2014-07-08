@@ -212,12 +212,34 @@ class consolidated_invoice(osv.osv):
         return True
 
     def move_line_id_payment_get(self, cr, uid, ids, *args):
-        # FIXME: implement this.
-        return []
+        if not ids: return []
+        result = self.move_line_id_payment_gets(cr, uid, ids, *args)
+        return result.get(ids[0], [])
+
+    def move_line_id_payment_gets(self, cr, uid, ids, *args):
+        res = {}
+        if not ids: return res
+        cr.execute('SELECT i.id, l.id '\
+                   'FROM account_move_line l '\
+                   'INNER JOIN account_invoice i ON (i.move_id=l.move_id) '\
+                   'INNER JOIN consolidated_invoice_link c ON i.id = c.invoice_id'\
+                   'WHERE c.consolidated_invoice_id IN %s'\
+                   'AND l.account_id=i.account_id',
+                   (tuple(ids),))
+        for r in cr.fetchall():
+            res.setdefault(r[0], [])
+            res[r[0]].append( r[1] )
+        return res
 
     def test_paid(self, cr, uid, ids, *args):
-        # FIXME: implement this.
-        return False
+        res = self.move_line_id_payment_get(cr, uid, ids)
+        if not res:
+            return False
+        ok = True
+        for id in res:
+            cr.execute('select reconcile_id from account_move_line where id=%s', (id,))
+            ok = ok and  bool(cr.fetchone()[0])
+        return ok
 
     def onchange_journal_id(self, cr, uid, ids, journal_id=False, context=None):
         result = {}

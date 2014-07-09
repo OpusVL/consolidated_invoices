@@ -35,6 +35,33 @@ class consolidated_invoice(osv.osv):
                 result[ci_link[0].consolidated_invoice_id.id] = True
         return result.keys()
 
+    def _get_invoice_from_line(self, cr, uid, ids, context=None):
+        move = {}
+        for line in self.pool.get('account.move.line').browse(cr, uid, ids, context=context):
+            if line.reconcile_partial_id:
+                for line2 in line.reconcile_partial_id.line_partial_ids:
+                    move[line2.move_id.id] = True
+            if line.reconcile_id:
+                for line2 in line.reconcile_id.line_id:
+                    move[line2.move_id.id] = True
+        invoice_ids = []
+        if move:
+            invoice_ids = _get_for_moves(cr, uid, move.keys(), context=context)
+        return invoice_ids
+
+    def _get_invoice_from_reconcile(self, cr, uid, ids, context=None):
+        move = {}
+        for r in self.pool.get('account.move.reconcile').browse(cr, uid, ids, context=context):
+            for line in r.line_partial_ids:
+                move[line.move_id.id] = True
+            for line in r.line_id:
+                move[line.move_id.id] = True
+
+        invoice_ids = []
+        if move:
+            invoice_ids = _get_for_moves(cr, uid, move.keys(), context=context)
+        return invoice_ids
+
     def _get_journal(self, cr, uid, context=None):
         if context is None:
             context = {}
@@ -65,7 +92,8 @@ class consolidated_invoice(osv.osv):
             res[ci.id] = {
                 'amount_untaxed': 0.0,
                 'amount_tax': 0.0,
-                'amount_total': 0.0
+                'amount_total': 0.0,
+                'residual': 0.0
             }
             for invoice in [l.invoice_id for l in ci.invoice_links]:
                 refund = re.match('.*refund$', invoice.type)
@@ -80,6 +108,12 @@ class consolidated_invoice(osv.osv):
                     else:
                         res[ci.id]['amount_tax'] += line.amount
                 res[ci.id]['amount_total'] = res[ci.id]['amount_tax'] + res[ci.id]['amount_untaxed']
+                if refund:
+                    res[ci.id]['residual'] -= invoice.residual
+                else:
+                    res[ci.id]['residual'] += invoice.residual
+
+
         return res
 
     _name = 'account.consolidated.invoice'
@@ -131,6 +165,17 @@ class consolidated_invoice(osv.osv):
                 'account.invoice.line': (_get_invoice_line, ['price_unit','invoice_line_tax_id','quantity','discount','invoice_id'], 20),
             },
             multi='all'),
+        'residual': fields.function(_amount_all, digits_compute=dp.get_precision('Account'), string='Balance',
+            store={
+                'account.consolidated.invoice': (lambda self, cr, uid, ids, c={}: ids, ['invoice_links'], 20),
+                'account.invoice': (_get_invoices, ['invoice_line', 'residual'], 20),
+                'account.invoice.tax': (_get_invoice_tax, None, 20),
+                'account.invoice.line': (_get_invoice_line, ['price_unit','invoice_line_tax_id','quantity','discount','invoice_id'], 20),
+                'account.move.line': (_get_invoice_from_line, None, 50),
+                'account.move.reconcile': (_get_invoice_from_reconcile, None, 50),
+            },
+            multi='all',
+            help="Remaining amount due."),
     }
     _defaults = {
         'state': 'draft',
@@ -167,11 +212,11 @@ class consolidated_invoice(osv.osv):
 
     def invoice_pay_customer(self, cr, uid, ids, context=None):
         if not ids: return []
+        move_line_ids = self.move_line_id_payment_get(cr, uid, ids)
+        import pdb; pdb.set_trace()
+        if not move_line_ids:
+            return []
         # need the corresponding invoices movement ids
-        account_inv_obj = self.pool.get('account.invoice')
-        inv_ids = account_inv_obj.search(cr, uid, [('consolidated_invoice_link.consolidated_invoice_id', 'in', ids)], context=context)
-        inv_info = account_inv_obj.read(cr, uid, inv_ids, ['move_id'])
-        move_ids = [ inv['move_id'] for inv in inv_info if inv['move_id'] ]
         dummy, view_id = self.pool.get('ir.model.data').get_object_reference(cr, uid, 'account_voucher', 'view_vendor_receipt_dialog_form')
 
         inv = self.browse(cr, uid, ids[0], context=context)
@@ -188,13 +233,13 @@ class consolidated_invoice(osv.osv):
             'context': {
                 'payment_expected_currency': inv.currency_id.id,
                 'default_partner_id': self.pool.get('res.partner')._find_accounting_partner(inv.partner_id).id,
-                'default_amount': inv.type in ('out_refund', 'in_refund') and -inv.residual or inv.residual, # FIXME: need to calculate this.
+                'default_amount': inv.residual, 
                 'default_reference': inv.name,
                 'close_after_process': True,
-                'invoice_type': 'out_invoice',
-                'move_line_ids': movement_ids,
-                'default_type': inv.type in ('out_invoice','out_refund') and 'receipt' or 'payment',
-                'type': inv.type in ('out_invoice','out_refund') and 'receipt' or 'payment'
+                'invoice_type': 'in_invoice', # FIXME: perhaps deal with this based on invoice type?
+                'move_line_ids': move_line_ids,
+                'default_type': 'receipt',
+                'type': 'receipt'
             }
         }
 
@@ -219,11 +264,11 @@ class consolidated_invoice(osv.osv):
     def move_line_id_payment_gets(self, cr, uid, ids, *args):
         res = {}
         if not ids: return res
-        cr.execute('SELECT i.id, l.id '\
+        cr.execute('SELECT c.consolidated_invoice_id, l.id '\
                    'FROM account_move_line l '\
                    'INNER JOIN account_invoice i ON (i.move_id=l.move_id) '\
-                   'INNER JOIN consolidated_invoice_link c ON i.id = c.invoice_id'\
-                   'WHERE c.consolidated_invoice_id IN %s'\
+                   'INNER JOIN account_consolidated_invoice_link c ON i.id = c.invoice_id '\
+                   'WHERE c.consolidated_invoice_id IN %s '\
                    'AND l.account_id=i.account_id',
                    (tuple(ids),))
         for r in cr.fetchall():
@@ -521,3 +566,17 @@ class account_invoice(osv.osv):
     _columns = {
         'consolidated_invoice_link': fields.one2many('account.consolidated.invoice.link', 'invoice_id', 'Consolidated Invoice')
     }
+
+
+def _get_for_moves(cr, uid, ids, context=None):
+    # do a quick bit of SQL to figure out the consolidated invoices
+    # relating to the movements.
+    sql = """
+    select consolidated_invoice_id 
+    from account_consolidated_invoice_link l 
+    inner join account_invoice i on i.id = l.invoice_id 
+    where i.move_id in %s
+    """
+    cr.execute(sql, (tuple(ids),))
+    cis = [ r[0] for r in cr.fetchall() ]
+    return cis

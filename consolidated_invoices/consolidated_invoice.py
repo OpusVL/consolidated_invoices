@@ -213,7 +213,6 @@ class consolidated_invoice(osv.osv):
     def invoice_pay_customer(self, cr, uid, ids, context=None):
         if not ids: return []
         move_line_ids = self.move_line_id_payment_get(cr, uid, ids)
-        import pdb; pdb.set_trace()
         if not move_line_ids:
             return []
         # need the corresponding invoices movement ids

@@ -584,7 +584,7 @@ class account_invoice(osv.osv):
 
     _columns = {
         'consolidated_invoice_link': fields.one2many('account.consolidated.invoice.link', 'invoice_id', 'Consolidated Invoice'),
-        'consolidated_invoice': fields.function(_consolidated_invoice, type='many2one', readonly=True, string='Consolidated Invoice')
+        'consolidated_invoice': fields.function(_consolidated_invoice, type='many2one', relation='account.consolidated.invoice', readonly=True, string='Consolidated Invoice')
     }
 
 

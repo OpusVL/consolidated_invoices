@@ -498,20 +498,19 @@ class consolidated_invoice_link(osv.osv):
             res[ci.id] = {
                 'amount_untaxed': 0.0,
                 'amount_tax': 0.0,
-                'amount_total': 0.0
+                'amount_total': 0.0,
+                'residual': 0.0
             }
             invoice = ci.invoice_id
             refund = re.match('.*refund$', invoice.type)
-            for line in invoice.invoice_line:
-                if refund:
-                    res[ci.id]['amount_untaxed'] -= line.price_subtotal
-                else:
-                    res[ci.id]['amount_untaxed'] += line.price_subtotal
-            for line in invoice.tax_line:
-                if refund:
-                    res[ci.id]['amount_tax'] -= line.amount
-                else:
-                    res[ci.id]['amount_tax'] += line.amount
+            if refund:
+                res[ci.id]['residual'] -= invoice.residual
+                res[ci.id]['amount_tax'] -= invoice.amount_tax
+                res[ci.id]['amount_untaxed'] -= invoice.amount_untaxed
+            else:
+                res[ci.id]['amount_tax'] += invoice.amount_tax
+                res[ci.id]['residual'] += invoice.residual
+                res[ci.id]['amount_untaxed'] += invoice.amount_untaxed
             res[ci.id]['amount_total'] = res[ci.id]['amount_tax'] + res[ci.id]['amount_untaxed']
         return res
 
@@ -550,9 +549,25 @@ class consolidated_invoice_link(osv.osv):
         'amount_total': fields.function(_amount_all, digits_compute=dp.get_precision('Account'), string='Invoice Total',
             store={
                 'account.consolidated.invoice.link': (lambda self, cr, uid, ids, c={}: ids, ['invoice_id'], 20),
-                'account.invoice': (_get_invoices, ['invoice_line'], 20),
-                'account.invoice.tax': (_get_invoice_tax, None, 20),
-                'account.invoice.line': (_get_invoice_line, ['price_unit','invoice_line_tax_id','quantity','discount','invoice_id'], 20),
+                'account.invoice': (_get_invoices, ['amount_total'], 20),
+            },
+            multi='all'),
+        'amount_untaxed': fields.function(_amount_all, digits_compute=dp.get_precision('Account'), string='Subtotal',
+            store={
+                'account.consolidated.invoice.link': (lambda self, cr, uid, ids, c={}: ids, ['invoice_id'], 20),
+                'account.invoice': (_get_invoices, ['amount_untaxed'], 20),
+            },
+            multi='all'),
+        'amount_tax': fields.function(_amount_all, digits_compute=dp.get_precision('Account'), string='Tax',
+            store={
+                'account.consolidated.invoice.link': (lambda self, cr, uid, ids, c={}: ids, ['invoice_id'], 20),
+                'account.invoice': (_get_invoices, ['amount_tax'], 20),
+            },
+            multi='all'),
+        'residual': fields.function(_amount_all, digits_compute=dp.get_precision('Account'), string='Balance',
+            store={
+                'account.consolidated.invoice.link': (lambda self, cr, uid, ids, c={}: ids, ['invoice_id'], 20),
+                'account.invoice': (_get_invoices, ['residual'], 20),
             },
             multi='all'),
     }

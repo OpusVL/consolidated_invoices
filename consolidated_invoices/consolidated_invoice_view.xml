@@ -116,7 +116,10 @@
                                 <tree string="Invoices" editable="bottom">
                                     <field name="invoice_id" 
                                         domain="[('consolidated_invoice_link','=',False),('partner_id','child_of',parent.partner_id),('state','=','draft')]" />
+                                    <field name="amount_untaxed" />
+                                    <field name="amount_tax" />
                                     <field name="amount_total" />
+                                    <field name="residual" />
                                 </tree>
                             </field>
                             <group class="oe_subtotal_footer oe_right">

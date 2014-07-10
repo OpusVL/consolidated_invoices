@@ -575,10 +575,16 @@ class consolidated_invoice_link(osv.osv):
 
 class account_invoice(osv.osv):
 
+    def _consolidated_invoice(self, cr, uid, ids, name, args, context=None):
+        i = self.browse(cr, uid, ids)
+        result = dict([(inv.id, inv.consolidated_invoice_link and (inv.consolidated_invoice_link[0].consolidated_invoice_id.id, inv.consolidated_invoice_link[0].consolidated_invoice_id.reference) or False) for inv in i])
+        return result
+
     _inherit = "account.invoice"
 
     _columns = {
-        'consolidated_invoice_link': fields.one2many('account.consolidated.invoice.link', 'invoice_id', 'Consolidated Invoice')
+        'consolidated_invoice_link': fields.one2many('account.consolidated.invoice.link', 'invoice_id', 'Consolidated Invoice'),
+        'consolidated_invoice': fields.function(_consolidated_invoice, type='many2one', readonly=True, string='Consolidated Invoice')
     }
 
 

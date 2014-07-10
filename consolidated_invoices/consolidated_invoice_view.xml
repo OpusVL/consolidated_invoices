@@ -163,5 +163,15 @@
 
         <menuitem action="action_consolidated_invoice_tree1" id="menu_action_consolidated_invoice_tree" parent="account.menu_finance_receivables"/>
 
+      <record model="ir.ui.view" id="view_ci_invoice">
+        <field name="name">account.invoice.form.consolidated_invoice</field>
+        <field name="model">account.invoice</field>
+        <field name="inherit_id" ref="account.invoice_form"/>
+        <field name="arch" type="xml">
+            <field name="fiscal_position" position="before">
+                <field name="consolidated_invoice"/>
+            </field>
+        </field>
+      </record>
     </data>
 </openerp>

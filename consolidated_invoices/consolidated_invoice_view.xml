@@ -50,6 +50,7 @@
                     <field name="partner_id" groups="base.group_user"/>
                     <field name="line_text"/>
                     <field name="company_id" groups="base.group_multi_company" widget="selection"/>
+                    <field name="residual" sum="Residual Amount"/>
                     <field name="amount_untaxed" sum="Untaxed Amount"/>
                     <field name="amount_total" sum="Total Amount"/>
                     <field name="state"/>
@@ -121,6 +122,7 @@
                             <group class="oe_subtotal_footer oe_right">
                                 <field name="amount_tax" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                                 <field name="amount_total" class="oe_subtotal_footer_separator" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                <field name="residual" groups="account.group_account_user" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                             </group>
                             <div class="oe_clear">
                                 <label for="comment"/>

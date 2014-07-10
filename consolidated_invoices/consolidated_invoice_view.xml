@@ -173,5 +173,16 @@
             </field>
         </field>
       </record>
+
+      <record model="ir.ui.view" id="invoice_tree_extension">
+        <field name="name">account.invoice.tree.consolidated_invoice</field>
+        <field name="model">account.invoice</field>
+        <field name="inherit_id" ref="account.invoice_tree"/>
+        <field name="arch" type="xml">
+            <field name="origin" position="before">
+                <field name="consolidated_invoice"/>
+            </field>
+        </field>
+      </record>
     </data>
 </openerp>

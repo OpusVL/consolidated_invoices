@@ -181,6 +181,7 @@ class consolidated_invoice(osv.osv):
         'state': 'draft',
         'journal_id': _get_journal,
         'currency_id': _get_currency,
+        'reference': lambda self, cr, uid, c: self.pool.get('ir.sequence').get(cr, uid, 'account.consolidated.invoice'),
         'company_id': lambda self,cr,uid,c: self.pool.get('res.company')._company_default_get(cr, uid, 'account.invoice', context=c),
     }
 

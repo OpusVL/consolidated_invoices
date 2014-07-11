@@ -205,7 +205,6 @@ class consolidated_invoice(osv.osv):
         self.write(cr, uid, ids, {'state':'open'}, context=context)
         account_inv_obj = self.pool.get('account.invoice')
         inv_ids = account_inv_obj.search(cr, uid, [('state','=','draft'), ('consolidated_invoice_link.consolidated_invoice_id', 'in', ids)], context=context)
-        account_inv_obj.action_date_assign(cr, uid, inv_ids, context=context)
         account_inv_obj.action_move_create(cr, uid, inv_ids, context=context)
         account_inv_obj.action_number(cr, uid, inv_ids, context=context)
         account_inv_obj.invoice_validate(cr, uid, inv_ids, context=context)
@@ -456,7 +455,7 @@ class consolidated_invoice(osv.osv):
         new_obj = {
             'line_text': "Consolidated Invoice for %s" % data['partner_name'],
             'invoice_links': [(0, False, {'invoice_id':i}) for i in ids],
-            'reference': data['reference'],
+            'reference': data['reference'] or self.pool.get('ir.sequence').get(cr, uid, 'account.consolidated.invoice'),
             'state': 'draft',
             'date_invoice': time.strftime('%Y-%m-%d'),
             'currency_id': data['currency_id'],

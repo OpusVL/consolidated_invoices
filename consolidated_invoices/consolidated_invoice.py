@@ -490,6 +490,11 @@ class consolidated_invoice(osv.osv):
         }, context=context)
         return invoice_id
 
+    def name_get(self, cr, uid, ids, context=None):
+        objs = self.browse(cr, uid, ids)
+        res = [ (i.id, i.reference or i.name) for i in objs ]
+        return res
+
 class consolidated_invoice_link(osv.osv):
 
     def _amount_all(self, cr, uid, ids, name, args, context=None):

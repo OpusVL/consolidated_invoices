@@ -2,7 +2,7 @@
 
 {
     'name': 'Consolidated Invoices',
-    'version': '0.01',
+    'version': '0.2',
     'category': 'Invoices',
     'description': """
     This module allows invoices to be consolidated.

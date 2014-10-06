@@ -1,4 +1,6 @@
-Consolidated Invoices
+# Consolidated Invoices
+
+## Purpose
 
 This module is designed to group up a set of invoices/refunds so that their 
 total value can be seen and they can all be approved/cancelled/paid as a job 
@@ -26,6 +28,7 @@ Issues:
 * Possible bug after creating a consolidated invoice with the UI going a 
   little funny, new item appears but isn't editable.
 
+# Copyright and License
 
 Copyright (C) 2014 OpusVL
 

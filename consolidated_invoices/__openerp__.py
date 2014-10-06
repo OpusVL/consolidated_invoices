@@ -29,7 +29,7 @@
 
 {
     'name': 'Consolidated Invoices',
-    'version': '0.3',
+    'version': '0.4',
     'category': 'Invoices',
     'description': """
 This module is designed to group up a set of invoices/refunds so that their 

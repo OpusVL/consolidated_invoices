@@ -31,6 +31,7 @@
     'name': 'Consolidated Invoices',
     'version': '0.4',
     'category': 'Invoices',
+    'summary'": 'Advanced grouping for invoices',
     'description': """
 This module is designed to group up a set of invoices/refunds so that their 
 total value can be seen and they can all be approved/cancelled/paid as a job 
